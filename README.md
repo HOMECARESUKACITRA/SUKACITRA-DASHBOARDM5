@@ -13,3 +13,4 @@ Data live: deploy Apps Script web app (?sheet=FEED_DASH) lalu isi FEED_URL di co
 Foto SPG: taruh di assets/foto/NAMA.jpg (atau .png), huruf besar persis nama SPG, contoh MARSHA.jpg. Foto sudah diproses (background putih) ada di assets/foto_siap/01-16.jpg: ganti nama sesuai SPG lalu pindah ke assets/foto/. Atau pakai link Google Drive (lihat TUTORIAL_GITHUB.md).
 Mode gelap/terang: tombol di pojok kanan header (tersimpan di browser).
 Hosting: lihat TUTORIAL_GITHUB.md
+ q
