@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id),fmt=n=>Math.round(n).toLocaleString('id-
 const wStart=[];let acc=1;D.weeks.forEach(w=>{wStart.push(acc);acc+=w});
 const mOf=w=>{let i=0;while(i<11&&w>=wStart[i+1])i++;return i};
 let S=D.struct.map((s,i)=>({i,spg:s[0],toko:s[1],sku:s[2],br:s[3],ch:s[4],area:s[5],pr:D.price[s[2]]||1}));
-let F=D.feed.map(f=>({s:f[0],w:f[1],t:f[2],a:f[3]}));
+let F=C.FEED_URL?[]:D.feed.map(f=>({s:f[0],w:f[1],t:f[2],a:f[3]}));window.__st=C.FEED_URL?'⏳ Memuat data dari spreadsheet...':'';
 let demo=false;
 function rnd(seed){return()=>(seed=(seed*16807)%2147483647)/2147483647}
 function makeDemo(){ // data contoh supaya desain kelihatan hidup
@@ -70,7 +70,7 @@ function render(){
   const m=st.bulan,w1=wStart[m],w2=w1+D.weeks[m]-1,rows=rowsBy(),done=Math.min(cur,w2);
   const wLeft=Math.max(1,w2-Math.max(cur,w1-1));
   $('sub').textContent=`PERIODE ${MFULL[m]} 2026 · UPDATE WEEK ${cur}`;
-  $('mode').textContent=demo?'MODE DEMO (data contoh)':'';
+  $('mode').textContent=demo?'MODE DEMO (data contoh)':(window.__st||'');
   $('unit').textContent='('+(st.unit=='krt'?'KARTON':'VALUE')+')';
   const a=agg(rows,w1,w2,cur),ach=a.tk?a.ak/a.tk:0;
   const sp=st.spg||(new Set(rows.map(r=>r.spg)).size==1?D.spg[rows[0].spg].n:'');
@@ -160,11 +160,11 @@ function page3(m,w1,w2){
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button,.page').forEach(e=>e.classList.remove('on'));b.classList.add('on');$(b.dataset.p).classList.add('on')});
 // live feed (opsional): isi CONFIG.FEED_URL di config.js
-if(C.FEED_URL){fetch(C.FEED_URL+'?sheet=FEED_DASH').then(r=>r.json()).then(j=>{
+if(C.FEED_URL){fetch(C.FEED_URL+'?sheet=FEED_DASH&t='+Date.now()).then(r=>r.json()).then(j=>{
   const rows=j.rows||j,key={};S.forEach(s=>key[D.spg[s.spg].n+'|'+s.toko+'|'+s.sku]=s.i);
   const nf=[];const wk=r=>+r.WEEK_NO||parseInt(String(r.WEEK_KALENDER||'').replace(/\D/g,''))||0,setFoto=(n,u)=>{const o=D.spg.find(x=>x.n==String(n).trim().toUpperCase());if(o&&u)o.foto=String(u).trim()};
   rows.forEach(r=>{if(r.FOTO_SPG)setFoto(r.SPG,r.FOTO_SPG);const i=key[r.SPG+'|'+r.TOKO+'|'+r.SKU];if(i!=null)nf.push({s:i,w:wk(r),t:+r.TARGET_WEEK_RP||0,a:+r.AKTUAL_RP||0})});
-  if(nf.length){F=nf;demo=false;cur=Math.max(1,...F.filter(f=>f.a>0).map(f=>f.w));st.bulan=mOf(cur);render()}}).catch(()=>{})}
+  if(j.error){window.__st='❌ Spreadsheet: '+j.error;render();return}if(nf.length){F=nf;demo=false;cur=Math.max(1,...F.filter(f=>f.a>0).map(f=>f.w));st.bulan=mOf(cur);window.__st='✅ Data live · '+nf.length+'/'+rows.length+' baris cocok · isi: '+F.filter(f=>f.a>0).length;render()}else{window.__st='⚠️ Terbaca '+rows.length+' baris tapi nama SPG/TOKO/SKU tidak cocok';render()}}).catch(()=>{window.__st='❌ Gagal ambil data (cek URL /exec & akses Anyone)';render()})}
 if(C.FEED_URL){fetch(C.FEED_URL+'?sheet=FOTO_SPG').then(r=>r.json()).then(j=>{(j.rows||j).forEach(r=>{const o=D.spg.find(x=>x.n==String(r.SPG||'').trim().toUpperCase());if(o&&(r.FOTO||r.FOTO_SPG))o.foto=String(r.FOTO||r.FOTO_SPG).trim()});render()}).catch(()=>{})}
 const tg=$('tg'),setT=t=>{document.documentElement.dataset.theme=t;try{localStorage.setItem('theme',t)}catch(e){}tg.textContent=t=='dark'?'☀️ Terang':'🌙 Gelap'};
 setT(document.documentElement.dataset.theme);tg.onclick=()=>{setT(document.documentElement.dataset.theme=='dark'?'light':'dark');render()};
