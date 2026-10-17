@@ -1,5 +1,4 @@
-// Pengaturan dashboard
 window.CONFIG={
-  DEMO:null,      // null = otomatis (demo kalau aktual di data.js masih kosong) | true = paksa demo | false = data asli saja
-  FEED_URL:''     // opsional: URL Google Apps Script web app (?sheet=FEED_DASH) supaya data live dari Google Sheet
+  DEMO:false,
+  FEED_URL:'https://script.google.com/macros/s/AKfycbzS5dXCqBrCyBWM4TRMNi6aKfNgWO35FP6xpw77bk6ZjnYxZ5jWI-JSAc9paeHNcnDkVg/exec'
 };
