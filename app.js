@@ -8,26 +8,32 @@
 .card.acv .donut text{fill:currentColor;font:800 32px Sora,system-ui,sans-serif;letter-spacing:-1px}
 .card.acv .acvlg{text-align:center;margin-top:4px}
 .card.acv #acvst{display:inline-block;padding:4px 12px;border-radius:999px;font:700 11px "Plus Jakarta Sans",system-ui,sans-serif;background:color-mix(in srgb,currentColor 12%,transparent)}
-.champ{position:relative;margin:10px 8px 18px;border:3px solid #c9a227;outline:2px solid #c9a227;outline-offset:3px;background-image:linear-gradient(rgba(245,197,66,.13),rgba(245,197,66,.13))}
-.champ:before,.champ:after{content:"✦";position:absolute;top:6px;color:#c9a227;font-size:16px}
-.champ:before{left:10px}.champ:after{right:10px}
-.cht{text-align:center;margin-bottom:12px}
-.cht b{display:block;font:800 18px Sora,system-ui,sans-serif;letter-spacing:1px;color:#a67c00}
-.cht small{display:block;margin:4px 0 8px;color:var(--mu)}
-.cht .seg{display:inline-flex}
-.chg{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}
-.chc{display:flex;gap:16px;align-items:center;padding:14px 8px 8px}
-.chp{position:relative;flex:none;padding-top:10px}
-.chp .av{border:4px solid #c9a227;border-radius:50%;box-sizing:content-box;display:block}
-.chp .crw{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:26px;font-style:normal;z-index:2}
-.chi{flex:1;min-width:0}
-.chi small{display:inline-block;padding:2px 8px;border-radius:4px;background:#c9a227;color:#fff;font:700 10px "Plus Jakarta Sans",system-ui,sans-serif;letter-spacing:.5px}
-.chi b{display:block;font:800 20px Sora,system-ui,sans-serif;margin:4px 0 0}
-.chi .chv{font:700 12px "Plus Jakarta Sans",system-ui,sans-serif;color:var(--mu);margin-bottom:6px}
-.chi .chv em{font:800 28px Sora,system-ui,sans-serif;font-style:normal;margin-right:4px}
-.chb{display:grid;grid-template-columns:44px 1fr auto;gap:6px;align-items:center;font-size:11px;margin-top:4px}
-.chb u{display:block;height:8px;border-radius:4px;background:rgba(128,128,128,.22);overflow:hidden;text-decoration:none}
+.card.champ{position:relative;margin:10px 4px 18px;padding:18px 14px 16px;border:3px solid #c9a227;outline:2px solid #c9a227;outline-offset:3px;border-radius:14px;color:#fff;overflow:hidden;background-color:#0b2a6b;background-image:radial-gradient(circle at 50% 0,rgba(245,197,66,.3),transparent 62%),radial-gradient(rgba(245,197,66,.55) 1.2px,transparent 1.7px),radial-gradient(rgba(255,255,255,.4) 1px,transparent 1.5px);background-size:auto,46px 46px,70px 70px;background-position:0 0,8px 14px,30px 40px}
+.champ .cht{text-align:center;margin-bottom:14px}
+.champ .rib{display:inline-block;padding:7px 30px;background:#f5c542;color:#1a1200;font:800 15px Sora,system-ui,sans-serif;letter-spacing:1.5px;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 50%,100% 100%,0 100%,14px 50%)}
+.champ .cht small{display:block;margin:8px 0 10px;color:#cdd9f5;font-size:12px}
+.champ .seg{display:inline-flex}
+.pod,.chg{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;justify-content:center}
+.pc{flex:1 1 170px;max-width:240px;text-align:center;padding:14px 8px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(245,197,66,.4);border-radius:12px;animation:pop .5s ease both}
+.pc.one{flex:1.6 1 250px;max-width:360px;padding:20px 12px 14px;background:rgba(245,197,66,.14);border:2px solid #f5c542}
+@keyframes pop{from{transform:scale(.88);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.pc{animation:none}}
+@media (max-width:640px){.pc.one{order:-1}}
+.champ .chp{position:relative;display:inline-block;padding-top:14px}
+.champ .chp .av{border:4px solid #f5c542;border-radius:50%;box-sizing:content-box;display:block;margin:0 auto}
+.pc.two .chp .av{border-color:#cbd5e1}.pc.three .chp .av{border-color:#cd7f32}
+.champ .crw{position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:28px;font-style:normal;z-index:2}
+.pc b{display:block;font:800 16px Sora,system-ui,sans-serif;margin-top:6px}
+.pc.one b{font-size:24px}
+.pc .pl{display:inline-block;padding:2px 10px;margin:5px 0;border-radius:999px;background:rgba(255,255,255,.16);font:700 11px "Plus Jakarta Sans",system-ui,sans-serif}
+.pc.one .pl{background:#f5c542;color:#1a1200}
+.pc .mny{font:800 22px Sora,system-ui,sans-serif;color:#f5c542;margin-top:4px}
+.pc.one .mny{font-size:34px}
+.pc .msb{font-size:12px;color:#cdd9f5;margin-bottom:6px}
+.chb{display:grid;grid-template-columns:44px 1fr auto;gap:6px;align-items:center;font-size:11px;margin-top:5px;color:#e6edff;text-align:left}
+.chb u{display:block;height:8px;border-radius:4px;background:rgba(255,255,255,.2);overflow:hidden;text-decoration:none}
 .chb u i{display:block;height:100%;border-radius:4px}
+.qt{text-align:center;margin-top:16px;font:600 13px "Plus Jakarta Sans",system-ui,sans-serif;color:#ffe9a8}
 `;document.head.appendChild(s)})();
 const D=window.DATA,C=window.CONFIG||{},MON=['JAN','FEB','MAR','APR','MEI','JUN','JUL','AGU','SEP','OKT','NOV','DES'];
 const MFULL=['JANUARI','FEBRUARI','MARET','APRIL','MEI','JUNI','JULI','AGUSTUS','SEPTEMBER','OKTOBER','NOVEMBER','DESEMBER'];
@@ -211,23 +217,33 @@ function page2(rows,m,w1,w2,wLeft){
   $('insl').querySelectorAll('.insw').forEach(w=>{const d=w.querySelector('.det');if(d)w.querySelector('.ir').onclick=()=>d.classList.toggle('hid')});
 }
 let chMode='all';
-const GL={GMM_NKA:'GMM / NKA',GROSIR:'GROSIR',STOCKIS:'STOCKIS'};
-function champCard(x,label){
-  const pc=x.t?Math.min(100,x.a/x.t*100):0;
-  return`<div class="chc"><div class="chp"><i class="crw">👑</i>${av(x.n,92)}</div><div class="chi"><small>${label}</small><b>${x.n}</b><div class="chv"><em style="color:${col(x.ac)}">${pct(x.ac)}</em>ACV · ${GL[x.g]||x.g}</div>
-  <div class="chb"><span>Target</span><u><i style="width:100%;background:#1e3a8a"></i></u><b>${UR(x.t)}</b></div>
-  <div class="chb"><span>Aktual</span><u><i style="width:${pc}%;background:#f97316"></i></u><b>${UR(x.a)}</b></div></div></div>`}
+const GL={GMM_NKA:'GMM / NKA',GROSIR:'GROSIR',STOCKIS:'STOCKIS'},INS_START=9; // juara berbasis skema insentif, mulai OKTOBER
+function insCalc(si,m,w1,w2){
+  const grp=D.spg[si].grp,sr=S.filter(s=>s.spg==si),ib=m<=8&&!C.INS_SKU_JANSEP,r2=rnd(m+99+si);let got=0,tot=0;
+  D.ins.filter(x=>x[0]==m+1&&x[1]==si).forEach(x=>{
+    let [,,,kd,sat,t0,a0,mn,mx]=x;const lv=LIV&&LIV[(m+1)+'|'+D.spg[si].n+'|'+kd];if(lv){t0=lv.t;a0=lv.a;mn=lv.mn;mx=lv.mx}let t=t0,a=a0;
+    const sc=SK[grp+'|'+kd]||{},sell=sc.sku&&(sc.rp||!ib?(q=>sc.sku.includes(q.sku)):(q=>kodeB(q)==kd));
+    if(sell){const y=agg(sr.filter(sell),w1,w2,w2);t=sc.rp?y.tr:ib?y.ck:y.ckr;a=sc.rp?y.ar:ib?y.cak:y.cakr}
+    else if(demo&&!t0){t=sat=='TOKO'?Math.ceil(sr.length/11/2)||3:sat=='OUTLET'?30:230;a=Math.round(t*(.6+r2()*.6))}
+    if(!t)return;const acr=Math.round(a/t*10000)/10000;
+    got+=(lv&&!sell)?lv.earn:kd=='SELLOUT'?(acr>=1?mx:0):acr>=1?mx:acr>=mn?Math.round(acr*mx):0;tot+=mx});
+  return{got,tot}}
+function pcard(x,cls,label,medal,sz){
+  const big=cls.indexOf('one')>-1,pc=x.t?Math.min(100,x.a/x.t*100):0;
+  return`<div class="pc ${cls}"><div class="chp"><i class="crw">${medal}</i>${av(x.n,sz)}</div><b>${x.n}</b><span class="pl">${label}</span><div class="mny">${UR(x.got)}</div><div class="msb">insentif didapat · ${pct(x.ip)} dari maksimum</div>`+
+  (big?`<div class="chb"><span>Target</span><u><i style="width:100%;background:#7aa2ff"></i></u><b>${UR(x.t)}</b></div><div class="chb"><span>Aktual</span><u><i style="width:${pc}%;background:#f5c542"></i></u><b>${UR(x.a)}</b></div><div class="msb" style="margin-top:6px">ACV ${pct(x.ac)}</div>`:'')+`</div>`}
 function renderChamp(){
   const el=$('champ');if(!el)return;
-  let mo=-1;for(let k=0;k<12;k++){const e=wStart[k]+D.weeks[k]-1;if(e<cur||(k==11&&cur>=e))mo=k}
-  if(mo<0){el.innerHTML='<div class="cht"><b>🏆 CONGRATULATIONS 🏆</b><small>Juara pertama diumumkan setelah closing '+MFULL[0]+' 2026</small></div>';return}
+  let mo=-1;for(let k=INS_START;k<12;k++){const e=wStart[k]+D.weeks[k]-1;if(e<cur||(k==11&&cur>=e))mo=k}
+  if(mo<0){el.innerHTML=`<div class="cht"><span class="rib">🏆 JUARA SPG</span><small>Juara perdana diumumkan setelah closing ${MFULL[INS_START]} 2026. Ayo kejar insentif terbaikmu! 🔥</small></div>`;return}
   const w1=wStart[mo],w2=w1+D.weeks[mo]-1;
-  const L=[...new Set(S.map(r=>r.spg))].map(i=>{const x=agg(S.filter(r=>r.spg==i),w1,w2,w2);return{n:D.spg[i].n,g:D.spg[i].grp,ac:x.tk?x.ak/x.tk:0,t:x.tr,a:x.ar}}).filter(x=>x.t>0&&x.a>0).sort((a,b)=>b.ac-a.ac);
+  const L=[...new Set(S.map(r=>r.spg))].map(i=>{const x=agg(S.filter(r=>r.spg==i),w1,w2,w2),c=insCalc(i,mo,w1,w2);return{n:D.spg[i].n,g:D.spg[i].grp,t:x.tr,a:x.ar,ac:x.tk?x.ak/x.tk:0,got:c.got,tot:c.tot,ip:c.tot?c.got/c.tot:0}}).filter(x=>x.got>0).sort((a,b)=>b.ip-a.ip||b.ac-a.ac||b.got-a.got);
   let body='';
-  if(!L.length)body='<p style="text-align:center;color:var(--mu)">Belum ada aktual bulan ini.</p>';
-  else if(chMode=='all')body='<div class="chg">'+champCard(L[0],'JUARA UMUM')+'</div>';
-  else{const seen={},w=[];L.forEach(x=>{if(!seen[x.g]){seen[x.g]=1;w.push(champCard(x,'JUARA CHANNEL '+(GL[x.g]||x.g)))}});body='<div class="chg">'+w.join('')+'</div>'}
-  el.innerHTML=`<div class="cht"><b>🏆 CONGRATULATIONS 🏆</b><small>Pencapaian terbaik · closing ${MFULL[mo]} 2026 · diperbarui setiap closing bulan</small><div class="seg"><button data-m="all" class="${chMode=='all'?'on':''}">OVERALL</button><button data-m="ch" class="${chMode=='ch'?'on':''}">BY CHANNEL</button></div></div>`+body;
+  if(!L.length)body='<p style="text-align:center;color:#cdd9f5">Belum ada SPG yang meraih insentif di bulan ini.</p>';
+  else if(chMode=='all'){const g=x=>GL[x.g]||x.g;
+    body='<div class="pod">'+(L[1]?pcard(L[1],'two',g(L[1]),'🥈',64):'')+pcard(L[0],'one','JUARA UMUM · '+g(L[0]),'👑',120)+(L[2]?pcard(L[2],'three',g(L[2]),'🥉',64):'')+'</div>'}
+  else{const seen={},w=[];L.forEach(x=>{if(!seen[x.g]){seen[x.g]=1;w.push(pcard(x,'one','JUARA CHANNEL '+(GL[x.g]||x.g),'👑',96))}});body='<div class="chg">'+w.join('')+'</div>'}
+  el.innerHTML=`<div class="cht"><span class="rib">🏆 JUARA SPG · ${MFULL[mo]} 2026</span><small>Berdasarkan pencapaian insentif · diperbarui setiap closing bulan</small><div class="seg"><button data-m="all" class="${chMode=='all'?'on':''}">OVERALL</button><button data-m="ch" class="${chMode=='ch'?'on':''}">BY CHANNEL</button></div></div>`+body+(L.length?'<div class="qt">Terima kasih atas kerja kerasnya! Kalian inspirasi seluruh tim. Yuk kejar juara bulan depan 🔥</div>':'');
   el.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{chMode=b.dataset.m;renderChamp()});
 }
 function page3(m,w1,w2){
