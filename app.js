@@ -159,15 +159,24 @@ function page3(m,w1,w2){
   $('rank').innerHTML=L.map((x,i)=>`<div class="rk"><span class="no">${i+1}</span><div style="display:flex;gap:10px;align-items:center">${av(x.n,38)}<div><b>${x.n}</b><br><small style="color:var(--mu)">${x.g} · gap ${U(x.gap)}</small></div></div><div class="pg"><i style="width:${Math.min(100,x.ac*100)}%;background:${col(x.ac)}"></i></div><span class="chip ${cls(x.ac)}">${pct(x.ac)}</span></div>`).join('')||'<p style="color:var(--mu)">Belum ada aktual.</p>';
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button,.page').forEach(e=>e.classList.remove('on'));b.classList.add('on');$(b.dataset.p).classList.add('on')});
-function ready(err){document.querySelector('main').style.opacity=1;render();if(err)$('sub').textContent+=' · GAGAL MUAT DATA LIVE'}
+let loaded=false;
+const KEYC='feedcache_v1',ckey=()=>S.length+'|'+D.spg.length;
+function saveCache(){try{localStorage.setItem(KEYC,JSON.stringify({k:ckey(),cur,nf:F}))}catch(e){}}
+function loadCache(){try{const c=JSON.parse(localStorage.getItem(KEYC)||'null');return c&&c.k==ckey()&&c.nf&&c.nf.length?c:null}catch(e){return null}}
+const hid=v=>{[$('flt'),document.querySelector('.tabs'),document.querySelector('main')].forEach(e=>e.style.display=v?'none':'')};
+function showLoader(){const d=document.createElement('div');d.id='ldr';d.style.cssText='margin:40px auto;max-width:420px;text-align:center;padding:36px 20px;font:600 15px "Plus Jakarta Sans",system-ui;color:#475569';
+  d.innerHTML='<style>@keyframes sp{to{transform:rotate(360deg)}}</style><div style="width:38px;height:38px;margin:0 auto 14px;border:4px solid #cbd5e1;border-top-color:#1e3a8a;border-radius:50%;animation:sp .8s linear infinite"></div>Memuat data terbaru…<br><small style="font-weight:400;opacity:.8">Pembukaan pertama butuh beberapa detik, berikutnya langsung tampil</small>';
+  hid(true);$('sub').textContent='';document.body.insertBefore(d,$('flt'))}
+function hideLoader(){const d=$('ldr');if(d)d.remove();hid(false)}
+function ready(err){loaded=true;hideLoader();render();if(err)$('sub').textContent+=' · GAGAL MUAT DATA LIVE'}
 // live feed (opsional): isi CONFIG.FEED_URL di config.js
 if(C.FEED_URL){fetch(C.FEED_URL+'?sheet=FEED_DASH').then(r=>r.json()).then(j=>{
   const rows=j.rows||j,key={};S.forEach(s=>key[D.spg[s.spg].n+'|'+s.toko+'|'+s.sku]=s.i);
   const nf=[];const wk=r=>+r.WEEK_NO||parseInt(String(r.WEEK_KALENDER||'').replace(/\D/g,''))||0,setFoto=(n,u)=>{const o=D.spg.find(x=>x.n==String(n).trim().toUpperCase());if(o&&u)o.foto=String(u).trim()};
   rows.forEach(r=>{if(r.FOTO_SPG)setFoto(r.SPG,r.FOTO_SPG);const i=key[r.SPG+'|'+r.TOKO+'|'+r.SKU];if(i!=null)nf.push({s:i,w:wk(r),t:+r.TARGET_WEEK_RP||0,a:+r.AKTUAL_RP||0})});
-  if(nf.length){F=nf;demo=false;cur=Math.max(1,...F.filter(f=>f.a>0).map(f=>f.w));st.bulan=mOf(cur)}ready()}).catch(()=>{ready(true)})}
-if(C.FEED_URL){fetch(C.FEED_URL+'?sheet=FOTO_SPG').then(r=>r.json()).then(j=>{(j.rows||j).forEach(r=>{const o=D.spg.find(x=>x.n==String(r.SPG||'').trim().toUpperCase());if(o&&(r.FOTO||r.FOTO_SPG))o.foto=String(r.FOTO||r.FOTO_SPG).trim()});render()}).catch(()=>{})}
+  if(nf.length){F=nf;demo=false;cur=Math.max(1,...F.filter(f=>f.a>0).map(f=>f.w));if(!loaded)st.bulan=mOf(cur);saveCache()}ready()}).catch(()=>{ready(true)})}
+if(C.FEED_URL){fetch(C.FEED_URL+'?sheet=FOTO_SPG').then(r=>r.json()).then(j=>{(j.rows||j).forEach(r=>{const o=D.spg.find(x=>x.n==String(r.SPG||'').trim().toUpperCase());if(o&&(r.FOTO||r.FOTO_SPG))o.foto=String(r.FOTO||r.FOTO_SPG).trim()});if(loaded)render()}).catch(()=>{})}
 const tg=$('tg'),setT=t=>{document.documentElement.dataset.theme=t;try{localStorage.setItem('theme',t)}catch(e){}tg.textContent=t=='dark'?'☀️ Terang':'🌙 Gelap'};
 setT(document.documentElement.dataset.theme);tg.onclick=()=>{setT(document.documentElement.dataset.theme=='dark'?'light':'dark');render()};
-if(C.FEED_URL){document.querySelector('main').style.opacity=.25;$('sub').textContent='Memuat data terbaru…'}else render();
+if(C.FEED_URL){const c=loadCache();if(c){F=c.nf;demo=false;cur=c.cur;st.bulan=mOf(cur);loaded=true;render()}else showLoader()}else render();
 })();
