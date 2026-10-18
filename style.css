@@ -119,7 +119,3 @@ td.r{white-space:nowrap}
 .rk .av img{object-fit:cover;object-position:top;padding:0}
 @media(max-width:600px){#foto .foto{width:84px!important;height:105px!important}.spgbox{align-items:center}}
 @media(max-width:900px){#foto .foto{width:84px!important;height:105px!important}}
-
-/* foto SPG: penuhi bingkai (foto sudah dipotong rasio 4:5) */
-#foto .av img{object-fit:cover;object-position:center top;padding:0;background:#fff}
-#foto .foto{border-radius:18px;overflow:hidden}
