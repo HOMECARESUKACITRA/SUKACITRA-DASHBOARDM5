@@ -28,7 +28,7 @@ function buildFilters(){
   const opt=(k,lab,vals,fmtv)=>`<label>${lab}<select data-k="${k}"><option value="">Semua</option>${vals.map(v=>`<option value="${v[0]}" ${String(st[k])==String(v[0])?'selected':''}>${v[1]}</option>`).join('')}</select></label>`;
   const L=(k,sk)=>rowsBy(sk).map(s=>s[k]);
   const u=a=>[...new Set(a)].filter(Boolean).sort().map(v=>[v,v]);
-  el.innerHTML=`<label>Periode<select data-k="bulan">${MFULL.map((m,i)=>`<option value="${i}" ${st.bulan==i?'selected':''}>${m} 2026</option>`).join('')}</select></label>`+
+  el.innerHTML=`<label>Periode<select data-k="bulan">${MFULL.map((m,i)=>`<option value="${i}" ${st.bulan==i?'selected':''}>${m} 2026</option>`).join('')}<option value="12" ${st.bulan==12?'selected':''}>YTD (Jan – week ${cur})</option></select></label>`+
    opt('area','Area',u(L('area','area')))+opt('spg','SPG',u(rowsBy('spg').map(s=>D.spg[s.spg].n)))+opt('toko','Outlet',u(L('toko','toko')))+
    opt('br','Brand',u(L('br','br')))+opt('sku','SKU',u(L('sku','sku')))+opt('ch','Channel',u(L('ch','ch')))+
    `<div class="seg"><button data-u="krt" class="${st.unit=='krt'?'on':''}">IN KARTON</button><button data-u="rp" class="${st.unit=='rp'?'on':''}">IN VALUE</button></div>`;
@@ -42,9 +42,9 @@ function agg(rows,w1,w2,cap){
   let tr=0,ar=0,ck=0,cak=0;
   F.forEach(f=>{if(f.w<w1||f.w>w2||!ok.has(f.s))return;const p=m[f.s].pr;tr+=f.t;ck+=f.t/p;
     if(!cap||f.w<=cap){ar+=f.a;cak+=f.a/p}});
-  return{tr,ar,ck,cak,ckq:tr*((cak&&ar)?cak/ar:(tr?ck/tr:0)),tk:tr,ak:ar};
+  return{tr,ar,ck,cak,caq:ar?(tr?ar*ck/tr:cak):0,tk:tr,ak:ar};
 }
-const val=(o,k)=>st.unit=='krt'?o[k=='t'?'ckq':'cak']:o[k=='t'?'tr':'ar'];
+const val=(o,k)=>st.unit=='krt'?o[k=='t'?'ck':'caq']:o[k=='t'?'tr':'ar'];
 const U=n=>st.unit=='krt'?fmt(n)+' krt':'Rp '+fmt(n);
 const cls=a=>a>=1?'g':a>=.9?'y':'rd',col=a=>a>=1?'var(--ok)':a>=.9?'var(--warn)':'var(--bad)';
 const pct=a=>(a*100).toFixed(1).replace('.',',')+'%';
@@ -67,9 +67,9 @@ const SK={
 let chart;
 function render(){
   buildFilters();
-  const m=st.bulan,w1=wStart[m],w2=w1+D.weeks[m]-1,rows=rowsBy(),done=Math.min(cur,w2);
-  const wLeft=Math.max(1,w2-Math.max(cur,w1-1));
-  $('sub').textContent=`PERIODE ${MFULL[m]} 2026 · UPDATE WEEK ${cur}`;
+  const ytd=st.bulan==12,m=st.bulan,w1=ytd?1:wStart[m],w2=ytd?cur:w1+D.weeks[m]-1,rows=rowsBy(),done=Math.min(cur,w2);
+  const wLeft=ytd?Math.max(1,acc-1-cur):Math.max(1,w2-Math.max(cur,w1-1));
+  $('sub').textContent=ytd?`PERIODE YTD · JANUARI – WEEK ${cur} 2026`:`PERIODE ${MFULL[m]} 2026 · UPDATE WEEK ${cur}`;
   $('mode').textContent=demo?'MODE DEMO (data contoh)':'';
   $('unit').textContent='('+(st.unit=='krt'?'KARTON':'VALUE')+')';
   const a=agg(rows,w1,w2,cur),ach=a.tk?a.ak/a.tk:0;
@@ -99,7 +99,8 @@ function render(){
    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:tc}}},
     scales:{x:{ticks:{color:tc},grid:{display:false}},y:{beginAtZero:true,ticks:{color:tc},grid:{color:dk?'#243049':'#e2e8f0'},title:{display:true,color:tc,text:st.unit=='krt'?'Karton':'Rp'}}}}};
   if(window.Chart){if(chart)chart.destroy();chart=new Chart($('ch'),cfg)}
-  page2(rows,m,w1,w2,wLeft);page3(m,w1,w2);
+  const pm=ytd?mOf(cur):m,pw1=wStart[pm],pw2=pw1+D.weeks[pm]-1;
+  page2(rows,pm,pw1,pw2,Math.max(1,pw2-Math.max(cur,pw1-1)));page3(m,w1,w2);
 }
 const KM={GMM_NKA:{'BOTOL':'GG','POUCH 1,5L':'GG','KILAU NIPIS 1,5L':'KN','KILAU NIPIS 630ML':'KN'},GROSIR:{'RCG':'GG','KILAU NIPIS 85ML':'KN85','KILAU NIPIS 630ML':'KN630'},STOCKIS:{'KILAU NIPIS 85ML':'KN85','KILAU NIPIS 630ML':'KN630'}};
 const KOD={GG:'Gentle Gen',KN:'Kilau Nipis',KN85:'Kilau Nipis 85ML',KN630:'Kilau Nipis 630ML'};
@@ -153,7 +154,7 @@ function page2(rows,m,w1,w2,wLeft){
   $('insl').querySelectorAll('.insw').forEach(w=>{const d=w.querySelector('.det');if(d)w.querySelector('.ir').onclick=()=>d.classList.toggle('hid')});
 }
 function page3(m,w1,w2){
-  $('d3sub').textContent=`${MFULL[m]} · ACV terendah di atas`;
+  $('d3sub').textContent=`${m==12?'YTD week 1–'+w2:MFULL[m]} · ACV terendah di atas`;
   const rows=rowsBy(),ids=[...new Set(rows.map(r=>r.spg))];
   const L=ids.map(i=>{const x=agg(rows.filter(r=>r.spg==i),w1,w2,cur);return{n:D.spg[i].n,g:D.spg[i].grp,ac:x.tk?x.ak/x.tk:0,gap:Math.max(0,val(x,'t')-val(x,'a'))}}).filter(x=>x.ac||demo).sort((a,b)=>a.ac-b.ac);
   $('rank').innerHTML=L.map((x,i)=>`<div class="rk"><span class="no">${i+1}</span><div style="display:flex;gap:10px;align-items:center">${av(x.n,38)}<div><b>${x.n}</b><br><small style="color:var(--mu)">${x.g} · gap ${U(x.gap)}</small></div></div><div class="pg"><i style="width:${Math.min(100,x.ac*100)}%;background:${col(x.ac)}"></i></div><span class="chip ${cls(x.ac)}">${pct(x.ac)}</span></div>`).join('')||'<p style="color:var(--mu)">Belum ada aktual.</p>';
