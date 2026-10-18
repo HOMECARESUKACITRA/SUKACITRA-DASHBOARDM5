@@ -1,4 +1,14 @@
 (function(){
+// ===== STYLE DONAT ACV (tertanam, tidak perlu edit style.css) =====
+(function(){const s=document.createElement('style');s.textContent=`
+.card.acv .donut{--acv:#dc2626;width:100%;max-width:170px;margin:6px auto 2px}
+.card.acv .donut svg{display:block;width:100%;height:auto;overflow:visible}
+.card.acv .donut .trk{fill:none;stroke:rgba(128,128,128,.16);stroke-width:9}
+.card.acv .donut .val{fill:none;stroke:var(--acv);stroke-width:9;stroke-linecap:round;transition:stroke-dasharray .9s cubic-bezier(.22,1,.36,1),stroke .4s,opacity .3s;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--acv) 55%,transparent))}
+.card.acv .donut text{fill:currentColor;font:800 32px Sora,system-ui,sans-serif;letter-spacing:-1px}
+.card.acv .acvlg{text-align:center;margin-top:4px}
+.card.acv #acvst{display:inline-block;padding:4px 12px;border-radius:999px;font:700 11px "Plus Jakarta Sans",system-ui,sans-serif;background:color-mix(in srgb,currentColor 12%,transparent)}
+`;document.head.appendChild(s)})();
 const D=window.DATA,C=window.CONFIG||{},MON=['JAN','FEB','MAR','APR','MEI','JUN','JUL','AGU','SEP','OKT','NOV','DES'];
 const MFULL=['JANUARI','FEBRUARI','MARET','APRIL','MEI','JUNI','JULI','AGUSTUS','SEPTEMBER','OKTOBER','NOVEMBER','DESEMBER'];
 const $=id=>document.getElementById(id),fmt=n=>Math.round(n).toLocaleString('id-ID');
@@ -53,7 +63,8 @@ const val=(o,k)=>st.unit=='krt'?o[k=='t'?'ck':'cak']:o[k=='t'?'tr':'ar']; // iku
 const vr=(o,k)=>o[k=='t'?'tr':'ar'],UR=n=>'Rp '+fmt(n); // selalu Rupiah
 const U=n=>st.unit=='krt'?fmt(n)+' krt':'Rp '+fmt(n);
 const cls=a=>a>=1?'g':a>=.9?'y':'rd',col=a=>a>=1?'var(--ok)':a>=.9?'var(--warn)':'var(--bad)';
-const pct=a=>(a*100).toFixed(1).replace('.',',')+'%';
+// PERSEN TANPA KOMA: 99,6% -> 99% (belum 100), 89,6% -> 89% (belum 90), 0,4% -> <1%
+const pct=a=>{const v=a*100;if(!(v>0))return '0%';if(v<1)return '<1%';let r=Math.round(v);if(v<100&&r>=100)r=99;if(v<90&&r>=90)r=89;return r+'%'};
 const SIL='<svg viewBox="0 0 100 100"><circle cx="50" cy="38" r="17" fill="#94a3b8" opacity=".55"/><path d="M16 100c2-27 17-40 34-40s32 13 34 40z" fill="#94a3b8" opacity=".55"/></svg>';
 function driveUrl(u){u=String(u||'').trim();if(!u)return '';const m=u.match(/\/d\/([\w-]{10,})/)||u.match(/[?&]id=([\w-]{10,})/);return m?'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1000':u}
 function av(sp,size){const o=D.spg.find(x=>x.n==sp);if(!o)return`<span class="av" style="width:${size}px;height:${size}px">${SIL}</span>`;
@@ -90,7 +101,14 @@ function render(){
   const tk=[...new Set(rows.map(r=>r.toko))];$('ntoko').textContent=st.toko||(tk.length==1?tk[0]:tk.length+' OUTLET');
   const T=vr(a,'t'),A=vr(a,'a');
   $('vt').textContent=UR(T);$('va').textContent=UR(A);$('ba').style.width=Math.min(100,T?A/T*100:0)+'%';
-  $('acv').textContent=a.tr?pct(ach):'–';$('acv').style.fill=col(ach);const CF=2*Math.PI*56;$('acvbar').style.strokeDasharray=(CF*Math.min(1,ach))+' '+CF;$('acvbar').style.stroke=col(ach);$('acvst').textContent=ach>=1?'Target tercapai':ach>=.9?'Hampir tercapai':'Di bawah target';$('acvst').style.color=col(ach);
+  // ===== DONAT ACV (baru) =====
+  $('acv').textContent=a.tr?pct(ach):'–';
+  const CF=2*Math.PI*58,cc=col(ach);
+  $('acvbar').style.strokeDasharray=(CF*Math.min(1,ach))+' '+CF;
+  $('acvbar').style.opacity=ach>0?1:0;
+  $('acvbar').closest('.donut').style.setProperty('--acv',cc);
+  $('acvst').textContent=ach>=1?'Target tercapai':ach>=.9?'Hampir tercapai':'Di bawah target';
+  $('acvst').style.color=cc;
   [['GG','agg','ggap','gwk'],['KN','akn','kgap','kwk']].forEach(([b,ea,eg,ew])=>{
     const r=rows.filter(x=>x.br==b),x=agg(r,w1,w2,cur),T2=val(x,'t'),A2=val(x,'a'),gap=Math.max(0,T2-A2);
     $(ea).innerHTML=`${UR(x.ar)} <span class="chip ${cls(x.tk?x.ak/x.tk:0)}">${pct(x.tk?x.ak/x.tk:0)}</span>`;
@@ -102,7 +120,7 @@ function render(){
     T3.push(+vr(x,'t').toFixed(1));A3.push(+vr(x,'a').toFixed(1));P3.push(x.tk&&wd?x.ak/x.tk:null);V3.push(wd&&vr(x,'a')?+(vr(x,'a')/wd).toFixed(1):null)}
   const dk=document.documentElement.dataset.theme=='dark',tc=dk?'#cbd5e1':'#334155';
   const lab={id:'lab',afterDatasetsDraw(c){const x=c.ctx,m=c.getDatasetMeta(1);x.save();x.font='800 12px Sora,system-ui';x.textAlign='center';
-    m.data.forEach((b,i)=>{if(P3[i]==null)return;x.fillStyle=P3[i]>=1?'#16a34a':P3[i]>=.9?'#ca8a04':'#dc2626';x.fillText(pct(P3[i]).replace(',0%','%'),b.x,b.y-6)});x.restore();const l=c.getDatasetMeta(2);x.save();x.font='700 11px "Plus Jakarta Sans",system-ui';x.textAlign='center';
+    m.data.forEach((b,i)=>{if(P3[i]==null)return;x.fillStyle=P3[i]>=1?'#16a34a':P3[i]>=.9?'#ca8a04':'#dc2626';x.fillText(pct(P3[i]),b.x,b.y-6)});x.restore();const l=c.getDatasetMeta(2);x.save();x.font='700 11px "Plus Jakarta Sans",system-ui';x.textAlign='center';
     l.data.forEach((p,i)=>{if(V3[i]==null)return;const t=fmt(V3[i]),w=x.measureText(t).width+10;x.fillStyle=dk?'#0f172a':'#fff';x.globalAlpha=.92;x.beginPath();x.roundRect?x.roundRect(p.x-w/2,p.y-26,w,16,8):x.rect(p.x-w/2,p.y-26,w,16);x.fill();x.globalAlpha=1;x.fillStyle='#0ea5e9';x.fillText(t,p.x,p.y-14)});x.restore()}};
   if(window.Chart)Chart.defaults.font.family='"Plus Jakarta Sans",system-ui,sans-serif';const cfg={type:'bar',plugins:[lab],data:{labels:MON,datasets:[
     {label:'TARGET',data:T3,backgroundColor:'#1e3a8a',borderRadius:5,order:2},
