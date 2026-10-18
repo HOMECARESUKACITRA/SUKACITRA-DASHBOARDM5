@@ -5,6 +5,11 @@ const $=id=>document.getElementById(id),fmt=n=>Math.round(n).toLocaleString('id-
 const wStart=[];let acc=1;D.weeks.forEach(w=>{wStart.push(acc);acc+=w});
 const mOf=w=>{let i=0;while(i<11&&w>=wStart[i+1])i++;return i};
 let S=D.struct.map((s,i)=>({i,spg:s[0],toko:s[1],sku:s[2],br:s[3],ch:s[4],area:s[5],pr:D.price[s[2]]||1}));
+// Jan–Sep: target & aktual per BRAND. Karton dihitung dengan SKU pengganti per channel
+// (MT: GG=BOTOL, KN=KN 630 | Grosir/Stockis: GG=RCG, KN=KN 85). Okt–Des: per SKU asli.
+const MAPP={MT:{GG:'BOTOL',KN:'KILAU NIPIS 630ML'},GR:{GG:'RCG',KN:'KILAU NIPIS 85ML'}};
+S.forEach(s=>{s.pm=D.price[MAPP[(s.ch=='NKA'||s.ch=='GMM')?'MT':'GR'][s.br]]||s.pr});
+const KB=wStart[9]-1; // week terakhir periode per brand (Jan–Sep = week 1–39)
 let F=D.feed.map(f=>({s:f[0],w:f[1],t:f[2],a:f[3]}));
 let demo=false;
 function rnd(seed){return()=>(seed=(seed*16807)%2147483647)/2147483647}
@@ -39,12 +44,13 @@ function buildFilters(){
 // agregasi: rows = struct terfilter, w1..w2 = rentang week
 function agg(rows,w1,w2,cap){
   const ok=new Set(rows.map(r=>r.i)),m={};rows.forEach(r=>m[r.i]=r);
-  let tr=0,ar=0,ck=0,cak=0;
-  F.forEach(f=>{if(f.w<w1||f.w>w2||!ok.has(f.s))return;const p=m[f.s].pr;tr+=f.t;ck+=f.t/p;
-    if(!cap||f.w<=cap){ar+=f.a;cak+=f.a/p}});
-  return{tr,ar,ck,cak,caq:ar?(tr?ar*ck/tr:cak):0,tk:tr,ak:ar};
+  let tr=0,ar=0,ck=0,cak=0,ckr=0,cakr=0;
+  F.forEach(f=>{if(f.w<w1||f.w>w2||!ok.has(f.s))return;const r=m[f.s],p=f.w<=KB?r.pm:r.pr;tr+=f.t;ck+=f.t/p;ckr+=f.t/r.pr;
+    if(!cap||f.w<=cap){ar+=f.a;cak+=f.a/p;cakr+=f.a/r.pr}});
+  return{tr,ar,ck,cak,ckr,cakr,tk:tr,ak:ar};
 }
-const val=(o,k)=>st.unit=='krt'?o[k=='t'?'ck':'caq']:o[k=='t'?'tr':'ar'];
+const val=(o,k)=>st.unit=='krt'?o[k=='t'?'ck':'cak']:o[k=='t'?'tr':'ar']; // ikut toggle (gap GG/KN + Detail & Insentif)
+const vr=(o,k)=>o[k=='t'?'tr':'ar'],UR=n=>'Rp '+fmt(n); // selalu Rupiah
 const U=n=>st.unit=='krt'?fmt(n)+' krt':'Rp '+fmt(n);
 const cls=a=>a>=1?'g':a>=.9?'y':'rd',col=a=>a>=1?'var(--ok)':a>=.9?'var(--warn)':'var(--bad)';
 const pct=a=>(a*100).toFixed(1).replace('.',',')+'%';
@@ -71,23 +77,24 @@ function render(){
   const wLeft=ytd?Math.max(1,acc-1-cur):Math.max(1,w2-Math.max(cur,w1-1));
   $('sub').textContent=ytd?`PERIODE YTD · JANUARI – WEEK ${cur} 2026`:`PERIODE ${MFULL[m]} 2026 · UPDATE WEEK ${cur}`;
   $('mode').textContent=demo?'MODE DEMO (data contoh)':'';
-  $('unit').textContent='('+(st.unit=='krt'?'KARTON':'VALUE')+')';
+  $('unit').textContent='(VALUE)';
   const a=agg(rows,w1,w2,cur),ach=a.tk?a.ak/a.tk:0;
   const sp=st.spg||(new Set(rows.map(r=>r.spg)).size==1?D.spg[rows[0].spg].n:'');
   $('foto').innerHTML=av(sp,112).replace('class="av"','class="av foto"');
   $('nspg').textContent=sp||'SEMUA SPG';
   const tk=[...new Set(rows.map(r=>r.toko))];$('ntoko').textContent=st.toko||(tk.length==1?tk[0]:tk.length+' OUTLET');
-  const T=val(a,'t'),A=val(a,'a');
-  $('vt').textContent=U(T);$('va').textContent=U(A);$('ba').style.width=Math.min(100,T?A/T*100:0)+'%';
+  const T=vr(a,'t'),A=vr(a,'a');
+  $('vt').textContent=UR(T);$('va').textContent=UR(A);$('ba').style.width=Math.min(100,T?A/T*100:0)+'%';
   $('acv').textContent=a.tr?pct(ach):'–';$('acv').style.fill=col(ach);const CF=2*Math.PI*56;$('acvbar').style.strokeDasharray=(CF*Math.min(1,ach))+' '+CF;$('acvbar').style.stroke=col(ach);$('acvst').textContent=ach>=1?'Target tercapai':ach>=.9?'Hampir tercapai':'Di bawah target';$('acvst').style.color=col(ach);
   [['GG','agg','ggap','gwk'],['KN','akn','kgap','kwk']].forEach(([b,ea,eg,ew])=>{
     const r=rows.filter(x=>x.br==b),x=agg(r,w1,w2,cur),T2=val(x,'t'),A2=val(x,'a'),gap=Math.max(0,T2-A2);
-    $(ea).innerHTML=`${U(A2)} <span class="chip ${cls(x.tk?x.ak/x.tk:0)}">${pct(x.tk?x.ak/x.tk:0)}</span>`;
-    $(eg).textContent=U(gap);$(ew).textContent=U(gap/wLeft);});
+    $(ea).innerHTML=`${UR(x.ar)} <span class="chip ${cls(x.tk?x.ak/x.tk:0)}">${pct(x.tk?x.ak/x.tk:0)}</span>`;
+    $(eg).textContent=U(gap);$(ew).textContent=U(gap/wLeft);
+    $(eg).title=$(ew).title=st.unit=='krt'?'Karton: Jan–Sep per brand pakai SKU pengganti (MT: BOTOL/KN 630, Grosir & Stockis: RCG/KN 85); Okt–Des per SKU asli':'Value (Rp)';});
   // chart bulanan
   const T3=[],A3=[],P3=[],V3=[];
   for(let i=0;i<12;i++){const s=wStart[i],e=s+D.weeks[i]-1,x=agg(rows,s,e,cur),wd=Math.max(0,Math.min(cur,e)-s+1);
-    T3.push(+val(x,'t').toFixed(1));A3.push(+val(x,'a').toFixed(1));P3.push(x.tk&&wd?x.ak/x.tk:null);V3.push(wd&&val(x,'a')?+(val(x,'a')/wd).toFixed(1):null)}
+    T3.push(+vr(x,'t').toFixed(1));A3.push(+vr(x,'a').toFixed(1));P3.push(x.tk&&wd?x.ak/x.tk:null);V3.push(wd&&vr(x,'a')?+(vr(x,'a')/wd).toFixed(1):null)}
   const dk=document.documentElement.dataset.theme=='dark',tc=dk?'#cbd5e1':'#334155';
   const lab={id:'lab',afterDatasetsDraw(c){const x=c.ctx,m=c.getDatasetMeta(1);x.save();x.font='800 12px Sora,system-ui';x.textAlign='center';
     m.data.forEach((b,i)=>{if(P3[i]==null)return;x.fillStyle=P3[i]>=1?'#16a34a':P3[i]>=.9?'#ca8a04':'#dc2626';x.fillText(pct(P3[i]).replace(',0%','%'),b.x,b.y-6)});x.restore();const l=c.getDatasetMeta(2);x.save();x.font='700 11px "Plus Jakarta Sans",system-ui';x.textAlign='center';
@@ -97,7 +104,7 @@ function render(){
     {label:'AKTUAL (angka = ACV %)',data:A3,backgroundColor:'#f97316',borderRadius:5,order:2},
     {type:'line',label:'AVG AKTUAL / WEEK',data:V3,order:0,z:10,borderColor:'#0ea5e9',backgroundColor:'#fff',pointBorderColor:'#0ea5e9',pointBorderWidth:3,tension:.3,pointRadius:5,pointHoverRadius:7,borderWidth:3.5,spanGaps:false}]},
    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:tc}}},
-    scales:{x:{ticks:{color:tc},grid:{display:false}},y:{beginAtZero:true,ticks:{color:tc},grid:{color:dk?'#243049':'#e2e8f0'},title:{display:true,color:tc,text:st.unit=='krt'?'Karton':'Rp'}}}}};
+    scales:{x:{ticks:{color:tc},grid:{display:false}},y:{beginAtZero:true,ticks:{color:tc},grid:{color:dk?'#243049':'#e2e8f0'},title:{display:true,color:tc,text:'Rp'}}}}};
   if(window.Chart){if(chart)chart.destroy();chart=new Chart($('ch'),cfg)}
   const pm=ytd?mOf(cur):m,pw1=wStart[pm],pw2=pw1+D.weeks[pm]-1;
   page2(rows,pm,pw1,pw2,Math.max(1,pw2-Math.max(cur,pw1-1)));page3(m,w1,w2);
@@ -105,17 +112,20 @@ function render(){
 const KM={GMM_NKA:{'BOTOL':'GG','POUCH 1,5L':'GG','KILAU NIPIS 1,5L':'KN','KILAU NIPIS 630ML':'KN'},GROSIR:{'RCG':'GG','KILAU NIPIS 85ML':'KN85','KILAU NIPIS 630ML':'KN630'},STOCKIS:{'KILAU NIPIS 85ML':'KN85','KILAU NIPIS 630ML':'KN630'}};
 const KOD={GG:'Gentle Gen',KN:'Kilau Nipis',KN85:'Kilau Nipis 85ML',KN630:'Kilau Nipis 630ML'};
 const kode=r=>(KM[D.spg[r.spg].grp]||{})[r.sku]||'';
+// Jan–Sep: parameter per brand (target hanya ada per brand), Okt–Des: per SKU
+const kodeB=r=>{const g=D.spg[r.spg].grp;if(g=='GMM_NKA')return r.br;if(g=='GROSIR')return r.br=='GG'?'GG':'KN85';if(g=='STOCKIS')return r.br=='KN'?'KN85':'';return ''};
 const N1=n=>n.toLocaleString('id-ID',{maximumFractionDigits:1}),U1=n=>st.unit=='krt'?N1(n)+' krt':'Rp '+fmt(n);
 function stat(ac,tg,t){return!t?['–','']:ac>=.9999?['TERCAPAI','g']:ac>=tg?['ON TRACK','y']:['TERTINGGAL','rd']}
 function page2(rows,m,w1,w2,wLeft){
-  const sch=rows.filter(kode),tg=Math.min(1,Math.max(0,Math.min(cur,w2)-w1+1)/D.weeks[m]),wks=[];for(let w=w1;w<=w2;w++)wks.push(w);
-  $('d1sub').textContent=`${MFULL[m]} · pace week ${(tg*100).toFixed(0)}% · sisa ${wLeft} week`;
-  $('d1sub2').textContent=`${MFULL[m]} · SKU skema insentif`;
+  const bm=m<=8,ib=bm&&!C.INS_SKU_JANSEP,kk=bm?kodeB:kode,uk=r=>bm?r.br:r.sku,sch=rows.filter(kk),tg=Math.min(1,Math.max(0,Math.min(cur,w2)-w1+1)/D.weeks[m]),wks=[];for(let w=w1;w<=w2;w++)wks.push(w);
+  $('d1sub').textContent=`${MFULL[m]}${bm?' · per brand':''} · pace week ${(tg*100).toFixed(0)}% · sisa ${wLeft} week`;
+  $('d1sub2').textContent=`${MFULL[m]} · ${bm?'brand skema insentif':'SKU skema insentif'}`;
   const wcell=(rs)=>wks.map(w=>w>cur?'<td class="r" style="color:var(--mu)">–</td>':`<td class="r" style="color:var(--mu)">${U1(val(agg(rs,w,w,cur),'a')).replace(' krt','')}</td>`).join('');
   const cells=(rs)=>{const x=agg(rs,w1,w2,cur),ac=x.tk?x.ak/x.tk:0,gp=Math.max(0,val(x,'t')-val(x,'a'));return`<td class="r">${U1(val(x,'t'))}</td><td class="r">${U1(val(x,'a'))}</td><td class="r"><span class="chip ${cls(ac)}">${x.tk?pct(ac):'–'}</span></td><td class="r">${U1(gp/wLeft)}</td>`+wcell(rs)};
-  const gk=['GG','KN','KN85','KN630'].filter(k=>sch.some(r=>kode(r)==k));
+  const gk=['GG','KN','KN85','KN630'].filter(k=>sch.some(r=>kk(r)==k));
   let h=`<tr><th>Parameter SKU</th><th class="r">Target</th><th class="r">Aktual</th><th class="r">ACV</th><th class="r">Gap / week</th>${wks.map(w=>`<th class="r">W${w}</th>`).join('')}</tr>`;
-  gk.forEach(k=>{const g=sch.filter(r=>kode(r)==k),skus=[...new Set(g.map(r=>r.sku))];
+  gk.forEach(k=>{const g=sch.filter(r=>kk(r)==k),skus=[...new Set(g.map(r=>r.sku))];
+    if(bm){h+=`<tr class="sub"><td>${KOD[k]}<div style="font-weight:400;font-size:10px;color:var(--mu)">target per brand</div></td>${cells(g)}</tr>`;return}
     h+=`<tr class="sub" data-k="${k}" style="cursor:pointer"><td>▸ ${KOD[k]}<div style="font-weight:400;font-size:10px;color:var(--mu)">${skus.join(', ')}</div></td>${cells(g)}</tr>`;
     skus.forEach(sk=>{const g2=g.filter(r=>r.sku==sk);h+=`<tr class="sk hid" data-p="${k}"><td>↳ ${sk}</td>${cells(g2)}</tr>`})});
   if(!gk.length)h+=`<tr><td colspan="${5+wks.length}" style="color:var(--mu)">Belum ada SKU parameter untuk filter ini.</td></tr>`;
@@ -126,29 +136,33 @@ function page2(rows,m,w1,w2,wLeft){
   let h2='<tr><th>SPG</th><th>Outlet / SKU</th><th class="r">Target</th><th class="r">Aktual</th><th class="r">ACV</th><th class="r">Gap / week</th><th class="r">Status</th></tr>';
   Object.keys(g).sort().forEach(k=>{const [sp,tk]=k.split('|'),x=agg(g[k],w1,w2,cur),ac=x.tk?x.ak/x.tk:0,gp=Math.max(0,val(x,'t')-val(x,'a'));
     h2+=`<tr class="sub" data-k="${k}" style="cursor:pointer"><td>${sp}</td><td>▸ ${tk}</td><td class="r">${U1(val(x,'t'))}</td><td class="r">${U1(val(x,'a'))}</td><td class="r"><span class="chip ${cls(ac)}">${x.tk?pct(ac):'–'}</span></td><td class="r">${U1(gp/wLeft)}</td><td class="r">${stc(x)}</td></tr>`;
-    g[k].forEach(r=>{const y=agg([r],w1,w2,cur);if(!y.tk&&!y.ak)return;const a2=y.tk?y.ak/y.tk:0,g2=Math.max(0,val(y,'t')-val(y,'a'));
-      h2+=`<tr class="sk hid" data-p="${k}"><td></td><td>↳ ${r.sku} <small style="color:var(--mu)">· ${KOD[kode(r)]}</small></td><td class="r">${U1(val(y,'t'))}</td><td class="r">${U1(val(y,'a'))}</td><td class="r"><span class="chip ${cls(a2)}">${pct(a2)}</span></td><td class="r">${U1(g2/wLeft)}</td><td class="r">${stc(y)}</td></tr>`})});
+    const ug={};g[k].forEach(r=>(ug[uk(r)]=ug[uk(r)]||[]).push(r));
+    Object.keys(ug).sort().forEach(u=>{const rs=ug[u],r=rs[0],y=agg(rs,w1,w2,cur);if(!y.tk&&!y.ak)return;const a2=y.tk?y.ak/y.tk:0,g2=Math.max(0,val(y,'t')-val(y,'a'));
+      h2+=`<tr class="sk hid" data-p="${k}"><td></td><td>↳ ${u} <small style="color:var(--mu)">· ${KOD[kk(r)]||''}</small></td><td class="r">${U1(val(y,'t'))}</td><td class="r">${U1(val(y,'a'))}</td><td class="r"><span class="chip ${cls(a2)}">${pct(a2)}</span></td><td class="r">${U1(g2/wLeft)}</td><td class="r">${stc(y)}</td></tr>`})});
   $('tsku').innerHTML=h2;$('tsku').querySelectorAll('tr.sub').forEach(t=>t.onclick=()=>$('tsku').querySelectorAll('tr.sk').forEach(x=>{if(x.dataset.p==t.dataset.k)x.classList.toggle('hid')}));
   // insentif
   const spl=st.spg?D.spg.findIndex(x=>x.n==st.spg):-1,ids=new Set(rows.map(r=>r.spg));
   const r2=rnd(m+99);let list=[];
   D.ins.filter(x=>x[0]==m+1&&(spl<0?ids.has(x[1]):x[1]==spl)).forEach(x=>{
     let [,si,kr,kode,sat,t0,a0,mn,mx]=x,sr=S.filter(s=>s.spg==si);let t=t0,a=a0;
-    const sc=SK[D.spg[si].grp+'|'+kode]||{},sell=sc.sku&&(q=>sc.sku.includes(q.sku));if(sc.t)kr=sc.t;
+    const sc=SK[D.spg[si].grp+'|'+kode]||{},sell=sc.sku&&(sc.rp||!ib?(q=>sc.sku.includes(q.sku)):(q=>kodeB(q)==kode));if(sc.t)kr=sc.t;
     let det='';
-    if(sell){const rr=sr.filter(sell),y=agg(rr,w1,w2,cur);t=sc.rp?y.tr:y.ck;a=sc.rp?y.ar:y.cak;
-      const F2=sc.rp?n=>'Rp '+fmt(n):n=>fmt(n)+' krt';
-      const sk={};rr.forEach(r=>(sk[r.sku]=sk[r.sku]||[]).push(r));
-      det='<table><tr><th>SKU</th><th class="r">Target</th><th class="r">Aktual</th><th class="r">ACV</th><th class="r">Gap 100%</th><th class="r">Gap/week</th></tr>'+Object.keys(sk).map(k=>{const z=agg(sk[k],w1,w2,cur),tt=sc.rp?z.tr:z.ck,aa=sc.rp?z.ar:z.cak;const ac=tt?aa/tt:0,gp=Math.max(0,tt-aa);
-        return`<tr><td>${k}</td><td class="r">${F2(tt)}</td><td class="r">${F2(aa)}</td><td class="r"><span class="chip ${cls(ac)}">${pct(ac)}</span></td><td class="r">${F2(gp)}</td><td class="r">${F2(gp/wLeft)}</td></tr>`}).join('')+'</table>'}
+    let tR=null,aR=null;
+    if(sell){const rr=sr.filter(sell),y=agg(rr,w1,w2,cur);t=sc.rp?y.tr:ib?y.ck:y.ckr;a=sc.rp?y.ar:ib?y.cak:y.cakr;if(!sc.rp){tR=y.tr;aR=y.ar}
+      const F2=sc.rp||st.unit=='rp'?n=>'Rp '+fmt(n):n=>fmt(n)+' krt';
+      const sk={};rr.forEach(r=>{const u=sc.rp||!ib?r.sku:r.br;(sk[u]=sk[u]||[]).push(r)});
+      const uR=st.unit=='rp'&&!sc.rp;
+      det='<table><tr><th>SKU</th><th class="r">Target</th><th class="r">Aktual</th><th class="r">ACV</th><th class="r">Gap 100%</th><th class="r">Gap/week</th></tr>'+Object.keys(sk).map(k=>{const z=agg(sk[k],w1,w2,cur),tt=sc.rp?z.tr:ib?z.ck:z.ckr,aa=sc.rp?z.ar:ib?z.cak:z.cakr;const ac=tt?aa/tt:0,tD=uR?z.tr:tt,aD=uR?z.ar:aa,gp=Math.max(0,tD-aD);
+        return`<tr><td>${k}</td><td class="r">${F2(tD)}</td><td class="r">${F2(aD)}</td><td class="r"><span class="chip ${cls(ac)}">${pct(ac)}</span></td><td class="r">${F2(gp)}</td><td class="r">${F2(gp/wLeft)}</td></tr>`}).join('')+'</table>'}
     else if(demo&&!t0){t=sat=='TOKO'?Math.ceil(sr.length/11/2)||3:sat=='OUTLET'?30:230;a=Math.round(t*(.6+r2()*.6))}
-    if(!t)return;const ac=a/t,earn=ac>=1?mx:ac>=mn?ac*mx:0;list.push({sc,sp:D.spg[si].n,kr,sat,t,a,ac,mx,earn,mn,det})});
+    if(!t)return;const ac=a/t,acr=Math.round(ac*10000)/10000,earn=acr>=1?mx:acr>=mn?Math.round(acr*mx):0; // ACH dibulatkan 4 desimal seperti workbook
+    list.push({sc,sp:D.spg[si].n,kr,sat,t,a,ac,mx,earn,mn,det,tR,aR})});
   const tot=list.reduce((s,x)=>s+x.mx,0),got=list.reduce((s,x)=>s+x.earn,0);
   $('d2sub').textContent=MFULL[m]+' · nilai insentif yang didapat';
   $('inskpi').innerHTML=`<div><small>Didapat</small><b style="color:var(--ok)">Rp ${fmt(got)}</b></div><div><small>Belum didapat</small><b style="color:var(--bad)">Rp ${fmt(tot-got)}</b></div><div><small>Maks. insentif</small><b>Rp ${fmt(tot)}</b></div>`;
-  $('insl').innerHTML=list.map(x=>{const gp=Math.max(0,x.t-x.a),rp=x.ac>=1?0:Math.max(0,x.mx-x.earn),u=x.sat.toLowerCase()=='rupiah'?'Rp ':'',us=u?'':' '+x.sat.toLowerCase();
+  $('insl').innerHTML=list.map(x=>{const uR=st.unit=='rp'&&x.tR!=null,xt=uR?x.tR:x.t,xa=uR?x.aR:x.a,gp=Math.max(0,xt-xa),rp=x.ac>=1?0:Math.max(0,x.mx-x.earn),u=uR||x.sat.toLowerCase()=='rupiah'?'Rp ':'',us=u?'':' '+x.sat.toLowerCase();
     return`<div class="insw"><div class="ir"><div><b>${x.kr.replace(/\(.*/,'')}</b><br><small style="color:var(--mu)">${x.sp}${x.det?' · klik untuk detail SKU':''}</small></div><div class="pg"><i style="width:${Math.min(100,x.ac*100)}%;background:${col(x.ac)}"></i></div><span class="chip ${cls(x.ac)}">${pct(x.ac)}</span><b>Rp ${fmt(x.earn)}</b></div>
-    <div class="meta"><span>Target <b>${u}${fmt(x.t)}${us}</b></span><span>Aktual <b>${u}${fmt(x.a)}${us}</b></span><span>Gap to 100% <b>${u}${fmt(gp)}${us}</b></span><span>Gap/week <b>${u}${fmt(gp/wLeft)}${us}</b> (sisa ${wLeft} week)</span><span>Insentif belum didapat <b>Rp ${fmt(rp)}</b></span></div>
+    <div class="meta"><span>Target <b>${u}${fmt(xt)}${us}</b></span><span>Aktual <b>${u}${fmt(xa)}${us}</b></span><span>Gap to 100% <b>${u}${fmt(gp)}${us}</b></span><span>Gap/week <b>${u}${fmt(gp/wLeft)}${us}</b> (sisa ${wLeft} week)</span><span>Insentif belum didapat <b>Rp ${fmt(rp)}</b></span>${uR?'<span>ACH insentif dihitung dari karton</span>':''}</div>
     <div class="meta" style="margin-top:-4px"><span>📋 ${x.sc.d||''}</span><span>${x.sc.r||''}</span>${x.sc.sku?`<span>SKU: <b>${x.sc.sku.length==6&&x.sc.rp?'semua Kilau Nipis':x.sc.sku.join(', ')}</b></span>`:''}</div>
     ${x.det?`<div class="det hid">${x.det}</div>`:''}</div>`}).join('')||'<p style="color:var(--mu)">Belum ada data insentif untuk filter ini.</p>';
   $('insl').querySelectorAll('.insw').forEach(w=>{const d=w.querySelector('.det');if(d)w.querySelector('.ir').onclick=()=>d.classList.toggle('hid')});
@@ -156,8 +170,8 @@ function page2(rows,m,w1,w2,wLeft){
 function page3(m,w1,w2){
   $('d3sub').textContent=`${m==12?'YTD week 1–'+w2:MFULL[m]} · ACV terendah di atas`;
   const rows=rowsBy(),ids=[...new Set(rows.map(r=>r.spg))];
-  const L=ids.map(i=>{const x=agg(rows.filter(r=>r.spg==i),w1,w2,cur);return{n:D.spg[i].n,g:D.spg[i].grp,ac:x.tk?x.ak/x.tk:0,gap:Math.max(0,val(x,'t')-val(x,'a'))}}).filter(x=>x.ac||demo).sort((a,b)=>a.ac-b.ac);
-  $('rank').innerHTML=L.map((x,i)=>`<div class="rk"><span class="no">${i+1}</span><div style="display:flex;gap:10px;align-items:center">${av(x.n,38)}<div><b>${x.n}</b><br><small style="color:var(--mu)">${x.g} · gap ${U(x.gap)}</small></div></div><div class="pg"><i style="width:${Math.min(100,x.ac*100)}%;background:${col(x.ac)}"></i></div><span class="chip ${cls(x.ac)}">${pct(x.ac)}</span></div>`).join('')||'<p style="color:var(--mu)">Belum ada aktual.</p>';
+  const L=ids.map(i=>{const x=agg(rows.filter(r=>r.spg==i),w1,w2,cur);return{n:D.spg[i].n,g:D.spg[i].grp,ac:x.tk?x.ak/x.tk:0,gap:Math.max(0,vr(x,'t')-vr(x,'a'))}}).filter(x=>x.ac||demo).sort((a,b)=>a.ac-b.ac);
+  $('rank').innerHTML=L.map((x,i)=>`<div class="rk"><span class="no">${i+1}</span><div style="display:flex;gap:10px;align-items:center">${av(x.n,38)}<div><b>${x.n}</b><br><small style="color:var(--mu)">${x.g} · gap ${UR(x.gap)}</small></div></div><div class="pg"><i style="width:${Math.min(100,x.ac*100)}%;background:${col(x.ac)}"></i></div><span class="chip ${cls(x.ac)}">${pct(x.ac)}</span></div>`).join('')||'<p style="color:var(--mu)">Belum ada aktual.</p>';
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button,.page').forEach(e=>e.classList.remove('on'));b.classList.add('on');$(b.dataset.p).classList.add('on')});
 let loaded=false;
