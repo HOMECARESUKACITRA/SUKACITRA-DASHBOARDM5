@@ -42,9 +42,9 @@ function agg(rows,w1,w2,cap){
   let tr=0,ar=0,ck=0,cak=0;
   F.forEach(f=>{if(f.w<w1||f.w>w2||!ok.has(f.s))return;const p=m[f.s].pr;tr+=f.t;ck+=f.t/p;
     if(!cap||f.w<=cap){ar+=f.a;cak+=f.a/p}});
-  return{tr,ar,ck,cak,tk:tr,ak:ar};
+  return{tr,ar,ck,cak,ckq:tr*((cak&&ar)?cak/ar:(tr?ck/tr:0)),tk:tr,ak:ar};
 }
-const val=(o,k)=>st.unit=='krt'?o[k=='t'?'ck':'cak']:o[k=='t'?'tr':'ar'];
+const val=(o,k)=>st.unit=='krt'?o[k=='t'?'ckq':'cak']:o[k=='t'?'tr':'ar'];
 const U=n=>st.unit=='krt'?fmt(n)+' krt':'Rp '+fmt(n);
 const cls=a=>a>=1?'g':a>=.9?'y':'rd',col=a=>a>=1?'var(--ok)':a>=.9?'var(--warn)':'var(--bad)';
 const pct=a=>(a*100).toFixed(1).replace('.',',')+'%';
