@@ -1,4 +1,4 @@
 window.CONFIG={
   DEMO:false,
-  FEED_URL:'https://script.google.com/macros/s/AKfycbzS5dXCqBrCyBWM4TRMNi6aKfNgWO35FP6xpw77bk6ZjnYxZ5jWI-JSAc9paeHNcnDkVg/exec'
+  FEED_URL:'https://script.google.com/macros/s/AKfycbz5FUjWJuCCAxBp2oOwu13p_8MK_Z5mb-1820lyYYcYxhN4Rt-sVrjNaODnAB68WIWD/exec'
 };
