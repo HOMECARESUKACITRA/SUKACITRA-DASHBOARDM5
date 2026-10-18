@@ -37,22 +37,17 @@ function buildFilters(){
   el.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{st.unit=b.dataset.u;render()});
 }
 // agregasi: rows = struct terfilter, w1..w2 = rentang week
-// ACV LEVEL BRAND: target Jan-Sep hanya ada di 1 SKU/brand, jadi dibandingkan per total brand (Rupiah).
-// Karton dipakai hanya kalau setiap SKU yang punya aktual juga punya target (lv=false).
 function agg(rows,w1,w2,cap){
-  const ok=new Set(rows.map(r=>r.i)),m={},tS={},aS={};rows.forEach(r=>m[r.i]=r);
+  const ok=new Set(rows.map(r=>r.i)),m={};rows.forEach(r=>m[r.i]=r);
   let tr=0,ar=0,tk=0,ak=0;
-  F.forEach(f=>{if(f.w<w1||f.w>w2||!ok.has(f.s))return;const p=m[f.s].pr;tr+=f.t;tk+=f.t/p;tS[f.s]=(tS[f.s]||0)+f.t;
-    if(!cap||f.w<=cap){ar+=f.a;ak+=f.a/p;aS[f.s]=(aS[f.s]||0)+f.a}});
-  const lv=Object.keys(aS).some(i=>aS[i]>0&&!(tS[i]>0));
-  const useK=st.unit=='krt'&&!lv;
-  const ac=useK?(tk?ak/tk:null):(tr?ar/tr:null);
-  return{tr,ar,tk,ak,lv,ac,fb:st.unit=='krt'&&lv};
+  F.forEach(f=>{if(f.w<w1||f.w>w2||!ok.has(f.s))return;const p=m[f.s].pr;tr+=f.t;tk+=f.t/p;
+    if(!cap||f.w<=cap){ar+=f.a;ak+=f.a/p}});
+  return{tr,ar,tk,ak};
 }
 const val=(o,k)=>st.unit=='krt'?o[k=='t'?'tk':'ak']:o[k=='t'?'tr':'ar'];
 const U=n=>st.unit=='krt'?fmt(n)+' krt':'Rp '+fmt(n);
 const cls=a=>a>=1?'g':a>=.9?'y':'rd',col=a=>a>=1?'var(--ok)':a>=.9?'var(--warn)':'var(--bad)';
-const pct=a=>(a*100).toFixed(1).replace('.',',')+'%',pctN=a=>a==null?'–':pct(a),chipC=a=>a==null?'':cls(a);
+const pct=a=>(a*100).toFixed(1).replace('.',',')+'%';
 const SIL='<svg viewBox="0 0 100 100"><circle cx="50" cy="38" r="17" fill="#94a3b8" opacity=".55"/><path d="M16 100c2-27 17-40 34-40s32 13 34 40z" fill="#94a3b8" opacity=".55"/></svg>';
 function driveUrl(u){u=String(u||'').trim();if(!u)return '';const m=u.match(/\/d\/([\w-]{10,})/)||u.match(/[?&]id=([\w-]{10,})/);return m?'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1000':u}
 function av(sp,size){const o=D.spg.find(x=>x.n==sp);if(!o)return`<span class="av" style="width:${size}px;height:${size}px">${SIL}</span>`;
@@ -77,22 +72,22 @@ function render(){
   $('sub').textContent=`PERIODE ${MFULL[m]} 2026 · UPDATE WEEK ${cur}`;
   $('mode').textContent=demo?'MODE DEMO (data contoh)':'';
   $('unit').textContent='('+(st.unit=='krt'?'KARTON':'VALUE')+')';
-  const a=agg(rows,w1,w2,cur),ach=a.ac==null?0:a.ac;
+  const a=agg(rows,w1,w2,cur),ach=a.tk?a.ak/a.tk:0;
   const sp=st.spg||(new Set(rows.map(r=>r.spg)).size==1?D.spg[rows[0].spg].n:'');
   $('foto').innerHTML=av(sp,112).replace('class="av"','class="av foto"');
   $('nspg').textContent=sp||'SEMUA SPG';
   const tk=[...new Set(rows.map(r=>r.toko))];$('ntoko').textContent=st.toko||(tk.length==1?tk[0]:tk.length+' OUTLET');
   const T=val(a,'t'),A=val(a,'a');
   $('vt').textContent=U(T);$('va').textContent=U(A);$('ba').style.width=Math.min(100,T?A/T*100:0)+'%';
-  $('acv').textContent=pctN(a.ac);$('acv').style.fill=col(ach);const CF=2*Math.PI*56;$('acvbar').style.strokeDasharray=(CF*Math.min(1,ach))+' '+CF;$('acvbar').style.stroke=col(ach);$('acvst').textContent=a.ac==null?'Target belum diatur':(ach>=1?'Target tercapai':ach>=.9?'Hampir tercapai':'Di bawah target')+(a.fb?' · basis Rp (target level brand)':'');$('acvst').style.color=col(ach);
+  $('acv').textContent=pct(ach);$('acv').style.fill=col(ach);const CF=2*Math.PI*56;$('acvbar').style.strokeDasharray=(CF*Math.min(1,ach))+' '+CF;$('acvbar').style.stroke=col(ach);$('acvst').textContent=ach>=1?'Target tercapai':ach>=.9?'Hampir tercapai':'Di bawah target';$('acvst').style.color=col(ach);
   [['GG','agg','ggap','gwk'],['KN','akn','kgap','kwk']].forEach(([b,ea,eg,ew])=>{
     const r=rows.filter(x=>x.br==b),x=agg(r,w1,w2,cur),T2=val(x,'t'),A2=val(x,'a'),gap=Math.max(0,T2-A2);
-    $(ea).innerHTML=`${U(A2)} <span class="chip ${chipC(x.ac)}">${pctN(x.ac)}</span>`;
+    $(ea).innerHTML=`${U(A2)} <span class="chip ${cls(x.tk?x.ak/x.tk:0)}">${pct(x.tk?x.ak/x.tk:0)}</span>`;
     $(eg).textContent=U(gap);$(ew).textContent=U(gap/wLeft);});
   // chart bulanan
   const T3=[],A3=[],P3=[],V3=[];
   for(let i=0;i<12;i++){const s=wStart[i],e=s+D.weeks[i]-1,x=agg(rows,s,e,cur),wd=Math.max(0,Math.min(cur,e)-s+1);
-    T3.push(+val(x,'t').toFixed(1));A3.push(+val(x,'a').toFixed(1));P3.push(wd?x.ac:null);V3.push(wd&&val(x,'a')?+(val(x,'a')/wd).toFixed(1):null)}
+    T3.push(+val(x,'t').toFixed(1));A3.push(+val(x,'a').toFixed(1));P3.push(x.tk&&wd?x.ak/x.tk:null);V3.push(wd&&val(x,'a')?+(val(x,'a')/wd).toFixed(1):null)}
   const dk=document.documentElement.dataset.theme=='dark',tc=dk?'#cbd5e1':'#334155';
   const lab={id:'lab',afterDatasetsDraw(c){const x=c.ctx,m=c.getDatasetMeta(1);x.save();x.font='800 12px Sora,system-ui';x.textAlign='center';
     m.data.forEach((b,i)=>{if(P3[i]==null)return;x.fillStyle=P3[i]>=1?'#16a34a':P3[i]>=.9?'#ca8a04':'#dc2626';x.fillText(pct(P3[i]).replace(',0%','%'),b.x,b.y-6)});x.restore();const l=c.getDatasetMeta(2);x.save();x.font='700 11px "Plus Jakarta Sans",system-ui';x.textAlign='center';
@@ -116,7 +111,7 @@ function page2(rows,m,w1,w2,wLeft){
   $('d1sub').textContent=`${MFULL[m]} · pace week ${(tg*100).toFixed(0)}% · sisa ${wLeft} week`;
   $('d1sub2').textContent=`${MFULL[m]} · SKU skema insentif`;
   const wcell=(rs)=>wks.map(w=>w>cur?'<td class="r" style="color:var(--mu)">–</td>':`<td class="r" style="color:var(--mu)">${U1(val(agg(rs,w,w,cur),'a')).replace(' krt','')}</td>`).join('');
-  const cells=(rs)=>{const x=agg(rs,w1,w2,cur),gp=Math.max(0,val(x,'t')-val(x,'a'));return`<td class="r">${U1(val(x,'t'))}</td><td class="r">${U1(val(x,'a'))}</td><td class="r"><span class="chip ${chipC(x.ac)}">${pctN(x.ac)}</span></td><td class="r">${U1(gp/wLeft)}</td>`+wcell(rs)};
+  const cells=(rs)=>{const x=agg(rs,w1,w2,cur),ac=x.tk?x.ak/x.tk:0,gp=Math.max(0,val(x,'t')-val(x,'a'));return`<td class="r">${U1(val(x,'t'))}</td><td class="r">${U1(val(x,'a'))}</td><td class="r"><span class="chip ${cls(ac)}">${x.tk?pct(ac):'–'}</span></td><td class="r">${U1(gp/wLeft)}</td>`+wcell(rs)};
   const gk=['GG','KN','KN85','KN630'].filter(k=>sch.some(r=>kode(r)==k));
   let h=`<tr><th>Parameter SKU</th><th class="r">Target</th><th class="r">Aktual</th><th class="r">ACV</th><th class="r">Gap / week</th>${wks.map(w=>`<th class="r">W${w}</th>`).join('')}</tr>`;
   gk.forEach(k=>{const g=sch.filter(r=>kode(r)==k),skus=[...new Set(g.map(r=>r.sku))];
@@ -126,12 +121,12 @@ function page2(rows,m,w1,w2,wLeft){
   $('tpar').innerHTML=h;$('tpar').querySelectorAll('tr.sub').forEach(t=>t.onclick=()=>$('tpar').querySelectorAll('tr.sk').forEach(x=>{if(x.dataset.p==t.dataset.k)x.classList.toggle('hid')}));
   // rincian per outlet & SKU (hanya SKU skema insentif)
   const g={};sch.forEach(r=>{const k=D.spg[r.spg].n+'|'+r.toko;(g[k]=g[k]||[]).push(r)});
-  const stc=(x)=>{const [s,c]=stat(x.ac||0,tg,x.ac!=null);return`<span class="chip ${c}">${s}</span>`};
+  const stc=(x)=>{const ac=x.tk?x.ak/x.tk:0,[s,c]=stat(ac,tg,x.tk);return`<span class="chip ${c}">${s}</span>`};
   let h2='<tr><th>SPG</th><th>Outlet / SKU</th><th class="r">Target</th><th class="r">Aktual</th><th class="r">ACV</th><th class="r">Gap / week</th><th class="r">Status</th></tr>';
-  Object.keys(g).sort().forEach(k=>{const [sp,tk]=k.split('|'),x=agg(g[k],w1,w2,cur),gp=Math.max(0,val(x,'t')-val(x,'a'));
-    h2+=`<tr class="sub" data-k="${k}" style="cursor:pointer"><td>${sp}</td><td>▸ ${tk}</td><td class="r">${U1(val(x,'t'))}</td><td class="r">${U1(val(x,'a'))}</td><td class="r"><span class="chip ${chipC(x.ac)}">${pctN(x.ac)}</span></td><td class="r">${U1(gp/wLeft)}</td><td class="r">${stc(x)}</td></tr>`;
-    g[k].forEach(r=>{const y=agg([r],w1,w2,cur);if(!y.tk&&!y.ak)return;const g2=Math.max(0,val(y,'t')-val(y,'a'));
-      h2+=`<tr class="sk hid" data-p="${k}"><td></td><td>↳ ${r.sku} <small style="color:var(--mu)">· ${KOD[kode(r)]}</small></td><td class="r">${U1(val(y,'t'))}</td><td class="r">${U1(val(y,'a'))}</td><td class="r"><span class="chip ${chipC(y.ac)}">${pctN(y.ac)}</span></td><td class="r">${U1(g2/wLeft)}</td><td class="r">${stc(y)}</td></tr>`})});
+  Object.keys(g).sort().forEach(k=>{const [sp,tk]=k.split('|'),x=agg(g[k],w1,w2,cur),ac=x.tk?x.ak/x.tk:0,gp=Math.max(0,val(x,'t')-val(x,'a'));
+    h2+=`<tr class="sub" data-k="${k}" style="cursor:pointer"><td>${sp}</td><td>▸ ${tk}</td><td class="r">${U1(val(x,'t'))}</td><td class="r">${U1(val(x,'a'))}</td><td class="r"><span class="chip ${cls(ac)}">${x.tk?pct(ac):'–'}</span></td><td class="r">${U1(gp/wLeft)}</td><td class="r">${stc(x)}</td></tr>`;
+    g[k].forEach(r=>{const y=agg([r],w1,w2,cur);if(!y.tk&&!y.ak)return;const a2=y.tk?y.ak/y.tk:0,g2=Math.max(0,val(y,'t')-val(y,'a'));
+      h2+=`<tr class="sk hid" data-p="${k}"><td></td><td>↳ ${r.sku} <small style="color:var(--mu)">· ${KOD[kode(r)]}</small></td><td class="r">${U1(val(y,'t'))}</td><td class="r">${U1(val(y,'a'))}</td><td class="r"><span class="chip ${cls(a2)}">${pct(a2)}</span></td><td class="r">${U1(g2/wLeft)}</td><td class="r">${stc(y)}</td></tr>`})});
   $('tsku').innerHTML=h2;$('tsku').querySelectorAll('tr.sub').forEach(t=>t.onclick=()=>$('tsku').querySelectorAll('tr.sk').forEach(x=>{if(x.dataset.p==t.dataset.k)x.classList.toggle('hid')}));
   // insentif
   const spl=st.spg?D.spg.findIndex(x=>x.n==st.spg):-1,ids=new Set(rows.map(r=>r.spg));
@@ -158,9 +153,9 @@ function page2(rows,m,w1,w2,wLeft){
   $('insl').querySelectorAll('.insw').forEach(w=>{const d=w.querySelector('.det');if(d)w.querySelector('.ir').onclick=()=>d.classList.toggle('hid')});
 }
 function page3(m,w1,w2){
-  $('d3sub').textContent=`${MFULL[m]} · ACV terendah di atas`;
+  $('d3sub').textContent=`${MFULL[m]} · ACV karton terendah di atas`;
   const rows=rowsBy(),ids=[...new Set(rows.map(r=>r.spg))];
-  const L=ids.map(i=>{const x=agg(rows.filter(r=>r.spg==i),w1,w2,cur);return{n:D.spg[i].n,g:D.spg[i].grp,ac:x.ac||0,gap:Math.max(0,val(x,'t')-val(x,'a'))}}).filter(x=>x.ac||demo).sort((a,b)=>a.ac-b.ac);
+  const L=ids.map(i=>{const x=agg(rows.filter(r=>r.spg==i),w1,w2,cur);return{n:D.spg[i].n,g:D.spg[i].grp,ac:x.tk?x.ak/x.tk:0,gap:Math.max(0,val(x,'t')-val(x,'a'))}}).filter(x=>x.ac||demo).sort((a,b)=>a.ac-b.ac);
   $('rank').innerHTML=L.map((x,i)=>`<div class="rk"><span class="no">${i+1}</span><div style="display:flex;gap:10px;align-items:center">${av(x.n,38)}<div><b>${x.n}</b><br><small style="color:var(--mu)">${x.g} · gap ${U(x.gap)}</small></div></div><div class="pg"><i style="width:${Math.min(100,x.ac*100)}%;background:${col(x.ac)}"></i></div><span class="chip ${cls(x.ac)}">${pct(x.ac)}</span></div>`).join('')||'<p style="color:var(--mu)">Belum ada aktual.</p>';
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button,.page').forEach(e=>e.classList.remove('on'));b.classList.add('on');$(b.dataset.p).classList.add('on')});
