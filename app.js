@@ -4,7 +4,7 @@
 .card.acv .donut{--acv:#dc2626;width:100%;max-width:170px;margin:6px auto 2px}
 .card.acv .donut svg{display:block;width:100%;height:auto;overflow:visible}
 .card.acv .donut .trk{fill:none;stroke:rgba(128,128,128,.16);stroke-width:9}
-.card.acv .donut .val{fill:none;stroke:var(--acv);stroke-width:9;stroke-linecap:round;transition:stroke-dasharray .9s cubic-bezier(.22,1,.36,1),stroke .4s,opacity .3s;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--acv) 55%,transparent))}
+.card.acv .donut .val{fill:none;stroke:var(--acv);stroke-width:9;stroke-linecap:round;filter:none;transition:stroke-dasharray .9s cubic-bezier(.22,1,.36,1),stroke .4s,opacity .3s}
 .card.acv .donut text{fill:currentColor;font:800 32px Sora,system-ui,sans-serif;letter-spacing:-1px}
 .card.acv .acvlg{text-align:center;margin-top:4px}
 .card.acv #acvst{display:inline-block;padding:4px 12px;border-radius:999px;font:700 11px "Plus Jakarta Sans",system-ui,sans-serif;background:color-mix(in srgb,currentColor 12%,transparent)}
