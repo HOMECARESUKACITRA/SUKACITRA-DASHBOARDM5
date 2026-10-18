@@ -18,7 +18,7 @@ function makeDemo(){ // data contoh supaya desain kelihatan hidup
   demo=true;
 }
 const real=F.filter(f=>f.a>0).length;
-if(C.DEMO===true||(C.DEMO!==false&&real<30))makeDemo();
+if(C.DEMO===true||(C.DEMO!==false&&!C.FEED_URL&&real<30))makeDemo();
 let cur=Math.max(0,...F.filter(f=>f.a>0).map(f=>f.w))||1;
 const st={bulan:mOf(cur),area:'',spg:'',toko:'',br:'',sku:'',ch:'',unit:'krt'};
 const uniq=(a,k)=>[...new Set(a.map(x=>x[k]))].filter(Boolean).sort();
@@ -39,12 +39,12 @@ function buildFilters(){
 // agregasi: rows = struct terfilter, w1..w2 = rentang week
 function agg(rows,w1,w2,cap){
   const ok=new Set(rows.map(r=>r.i)),m={};rows.forEach(r=>m[r.i]=r);
-  let tr=0,ar=0,tk=0,ak=0;
-  F.forEach(f=>{if(f.w<w1||f.w>w2||!ok.has(f.s))return;const p=m[f.s].pr;tr+=f.t;tk+=f.t/p;
-    if(!cap||f.w<=cap){ar+=f.a;ak+=f.a/p}});
-  return{tr,ar,tk,ak};
+  let tr=0,ar=0,ck=0,cak=0;
+  F.forEach(f=>{if(f.w<w1||f.w>w2||!ok.has(f.s))return;const p=m[f.s].pr;tr+=f.t;ck+=f.t/p;
+    if(!cap||f.w<=cap){ar+=f.a;cak+=f.a/p}});
+  return{tr,ar,ck,cak,tk:tr,ak:ar};
 }
-const val=(o,k)=>st.unit=='krt'?o[k=='t'?'tk':'ak']:o[k=='t'?'tr':'ar'];
+const val=(o,k)=>st.unit=='krt'?o[k=='t'?'ck':'cak']:o[k=='t'?'tr':'ar'];
 const U=n=>st.unit=='krt'?fmt(n)+' krt':'Rp '+fmt(n);
 const cls=a=>a>=1?'g':a>=.9?'y':'rd',col=a=>a>=1?'var(--ok)':a>=.9?'var(--warn)':'var(--bad)';
 const pct=a=>(a*100).toFixed(1).replace('.',',')+'%';
@@ -79,7 +79,7 @@ function render(){
   const tk=[...new Set(rows.map(r=>r.toko))];$('ntoko').textContent=st.toko||(tk.length==1?tk[0]:tk.length+' OUTLET');
   const T=val(a,'t'),A=val(a,'a');
   $('vt').textContent=U(T);$('va').textContent=U(A);$('ba').style.width=Math.min(100,T?A/T*100:0)+'%';
-  $('acv').textContent=pct(ach);$('acv').style.fill=col(ach);const CF=2*Math.PI*56;$('acvbar').style.strokeDasharray=(CF*Math.min(1,ach))+' '+CF;$('acvbar').style.stroke=col(ach);$('acvst').textContent=ach>=1?'Target tercapai':ach>=.9?'Hampir tercapai':'Di bawah target';$('acvst').style.color=col(ach);
+  $('acv').textContent=a.tr?pct(ach):'–';$('acv').style.fill=col(ach);const CF=2*Math.PI*56;$('acvbar').style.strokeDasharray=(CF*Math.min(1,ach))+' '+CF;$('acvbar').style.stroke=col(ach);$('acvst').textContent=ach>=1?'Target tercapai':ach>=.9?'Hampir tercapai':'Di bawah target';$('acvst').style.color=col(ach);
   [['GG','agg','ggap','gwk'],['KN','akn','kgap','kwk']].forEach(([b,ea,eg,ew])=>{
     const r=rows.filter(x=>x.br==b),x=agg(r,w1,w2,cur),T2=val(x,'t'),A2=val(x,'a'),gap=Math.max(0,T2-A2);
     $(ea).innerHTML=`${U(A2)} <span class="chip ${cls(x.tk?x.ak/x.tk:0)}">${pct(x.tk?x.ak/x.tk:0)}</span>`;
@@ -135,10 +135,10 @@ function page2(rows,m,w1,w2,wLeft){
     let [,si,kr,kode,sat,t0,a0,mn,mx]=x,sr=S.filter(s=>s.spg==si);let t=t0,a=a0;
     const sc=SK[D.spg[si].grp+'|'+kode]||{},sell=sc.sku&&(q=>sc.sku.includes(q.sku));if(sc.t)kr=sc.t;
     let det='';
-    if(sell){const rr=sr.filter(sell),y=agg(rr,w1,w2,cur);t=sc.rp?y.tr:y.tk;a=sc.rp?y.ar:y.ak;
+    if(sell){const rr=sr.filter(sell),y=agg(rr,w1,w2,cur);t=sc.rp?y.tr:y.ck;a=sc.rp?y.ar:y.cak;
       const F2=sc.rp?n=>'Rp '+fmt(n):n=>fmt(n)+' krt';
       const sk={};rr.forEach(r=>(sk[r.sku]=sk[r.sku]||[]).push(r));
-      det='<table><tr><th>SKU</th><th class="r">Target</th><th class="r">Aktual</th><th class="r">ACV</th><th class="r">Gap 100%</th><th class="r">Gap/week</th></tr>'+Object.keys(sk).map(k=>{const z=agg(sk[k],w1,w2,cur),tt=sc.rp?z.tr:z.tk,aa=sc.rp?z.ar:z.ak;const ac=tt?aa/tt:0,gp=Math.max(0,tt-aa);
+      det='<table><tr><th>SKU</th><th class="r">Target</th><th class="r">Aktual</th><th class="r">ACV</th><th class="r">Gap 100%</th><th class="r">Gap/week</th></tr>'+Object.keys(sk).map(k=>{const z=agg(sk[k],w1,w2,cur),tt=sc.rp?z.tr:z.ck,aa=sc.rp?z.ar:z.cak;const ac=tt?aa/tt:0,gp=Math.max(0,tt-aa);
         return`<tr><td>${k}</td><td class="r">${F2(tt)}</td><td class="r">${F2(aa)}</td><td class="r"><span class="chip ${cls(ac)}">${pct(ac)}</span></td><td class="r">${F2(gp)}</td><td class="r">${F2(gp/wLeft)}</td></tr>`}).join('')+'</table>'}
     else if(demo&&!t0){t=sat=='TOKO'?Math.ceil(sr.length/11/2)||3:sat=='OUTLET'?30:230;a=Math.round(t*(.6+r2()*.6))}
     if(!t)return;const ac=a/t,earn=ac>=1?mx:ac>=mn?ac*mx:0;list.push({sc,sp:D.spg[si].n,kr,sat,t,a,ac,mx,earn,mn,det})});
@@ -153,20 +153,21 @@ function page2(rows,m,w1,w2,wLeft){
   $('insl').querySelectorAll('.insw').forEach(w=>{const d=w.querySelector('.det');if(d)w.querySelector('.ir').onclick=()=>d.classList.toggle('hid')});
 }
 function page3(m,w1,w2){
-  $('d3sub').textContent=`${MFULL[m]} · ACV karton terendah di atas`;
+  $('d3sub').textContent=`${MFULL[m]} · ACV terendah di atas`;
   const rows=rowsBy(),ids=[...new Set(rows.map(r=>r.spg))];
   const L=ids.map(i=>{const x=agg(rows.filter(r=>r.spg==i),w1,w2,cur);return{n:D.spg[i].n,g:D.spg[i].grp,ac:x.tk?x.ak/x.tk:0,gap:Math.max(0,val(x,'t')-val(x,'a'))}}).filter(x=>x.ac||demo).sort((a,b)=>a.ac-b.ac);
   $('rank').innerHTML=L.map((x,i)=>`<div class="rk"><span class="no">${i+1}</span><div style="display:flex;gap:10px;align-items:center">${av(x.n,38)}<div><b>${x.n}</b><br><small style="color:var(--mu)">${x.g} · gap ${U(x.gap)}</small></div></div><div class="pg"><i style="width:${Math.min(100,x.ac*100)}%;background:${col(x.ac)}"></i></div><span class="chip ${cls(x.ac)}">${pct(x.ac)}</span></div>`).join('')||'<p style="color:var(--mu)">Belum ada aktual.</p>';
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button,.page').forEach(e=>e.classList.remove('on'));b.classList.add('on');$(b.dataset.p).classList.add('on')});
+function ready(err){document.querySelector('main').style.opacity=1;render();if(err)$('sub').textContent+=' · GAGAL MUAT DATA LIVE'}
 // live feed (opsional): isi CONFIG.FEED_URL di config.js
 if(C.FEED_URL){fetch(C.FEED_URL+'?sheet=FEED_DASH').then(r=>r.json()).then(j=>{
   const rows=j.rows||j,key={};S.forEach(s=>key[D.spg[s.spg].n+'|'+s.toko+'|'+s.sku]=s.i);
   const nf=[];const wk=r=>+r.WEEK_NO||parseInt(String(r.WEEK_KALENDER||'').replace(/\D/g,''))||0,setFoto=(n,u)=>{const o=D.spg.find(x=>x.n==String(n).trim().toUpperCase());if(o&&u)o.foto=String(u).trim()};
   rows.forEach(r=>{if(r.FOTO_SPG)setFoto(r.SPG,r.FOTO_SPG);const i=key[r.SPG+'|'+r.TOKO+'|'+r.SKU];if(i!=null)nf.push({s:i,w:wk(r),t:+r.TARGET_WEEK_RP||0,a:+r.AKTUAL_RP||0})});
-  if(nf.length){F=nf;demo=false;cur=Math.max(1,...F.filter(f=>f.a>0).map(f=>f.w));st.bulan=mOf(cur);render()}}).catch(()=>{})}
+  if(nf.length){F=nf;demo=false;cur=Math.max(1,...F.filter(f=>f.a>0).map(f=>f.w));st.bulan=mOf(cur)}ready()}).catch(()=>{ready(true)})}
 if(C.FEED_URL){fetch(C.FEED_URL+'?sheet=FOTO_SPG').then(r=>r.json()).then(j=>{(j.rows||j).forEach(r=>{const o=D.spg.find(x=>x.n==String(r.SPG||'').trim().toUpperCase());if(o&&(r.FOTO||r.FOTO_SPG))o.foto=String(r.FOTO||r.FOTO_SPG).trim()});render()}).catch(()=>{})}
 const tg=$('tg'),setT=t=>{document.documentElement.dataset.theme=t;try{localStorage.setItem('theme',t)}catch(e){}tg.textContent=t=='dark'?'☀️ Terang':'🌙 Gelap'};
 setT(document.documentElement.dataset.theme);tg.onclick=()=>{setT(document.documentElement.dataset.theme=='dark'?'light':'dark');render()};
-render();
+if(C.FEED_URL){document.querySelector('main').style.opacity=.25;$('sub').textContent='Memuat data terbaru…'}else render();
 })();
