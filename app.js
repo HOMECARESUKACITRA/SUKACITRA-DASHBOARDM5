@@ -234,8 +234,9 @@ function pcard(x,cls,label,medal,sz){
   (big?`<div class="chb"><span>Target</span><u><i style="width:100%;background:#7aa2ff"></i></u><b>${UR(x.t)}</b></div><div class="chb"><span>Aktual</span><u><i style="width:${pc}%;background:#f5c542"></i></u><b>${UR(x.a)}</b></div><div class="msb" style="margin-top:6px">ACV ${pct(x.ac)}</div>`:'')+`</div>`}
 function renderChamp(){
   const el=$('champ');if(!el)return;
-  let mo=-1;for(let k=INS_START;k<12;k++){const e=wStart[k]+D.weeks[k]-1;if(e<cur||(k==11&&cur>=e))mo=k}
-  if(mo<0){el.innerHTML=`<div class="cht"><span class="rib">🏆 JUARA SPG</span><small>Juara perdana diumumkan setelah closing ${MFULL[INS_START]} 2026. Ayo kejar insentif terbaikmu! 🔥</small></div>`;return}
+  let mo=-1;for(let k=INS_START;k<12;k++){const e=wStart[k]+D.weeks[k]-1;if(e<=cur)mo=k}
+  let prev=false;if(mo<0&&(C.JUARA_PREVIEW||/[?&]preview=1/.test(location.search))&&mOf(cur)>=INS_START){mo=mOf(cur);prev=true}
+  if(mo<0){el.innerHTML=`<div class="cht"><span class="rib">🏆 JUARA SPG</span><small>Juara perdana diumumkan saat data ${MFULL[INS_START]} 2026 sudah lengkap sampai minggu terakhir. Ayo kejar insentif terbaikmu! 🔥</small></div>`;return}
   const w1=wStart[mo],w2=w1+D.weeks[mo]-1;
   const L=[...new Set(S.map(r=>r.spg))].map(i=>{const x=agg(S.filter(r=>r.spg==i),w1,w2,w2),c=insCalc(i,mo,w1,w2);return{n:D.spg[i].n,g:D.spg[i].grp,t:x.tr,a:x.ar,ac:x.tk?x.ak/x.tk:0,got:c.got,tot:c.tot,ip:c.tot?c.got/c.tot:0}}).filter(x=>x.got>0).sort((a,b)=>b.ip-a.ip||b.ac-a.ac||b.got-a.got);
   let body='';
@@ -243,7 +244,7 @@ function renderChamp(){
   else if(chMode=='all'){const g=x=>GL[x.g]||x.g;
     body='<div class="pod">'+(L[1]?pcard(L[1],'two',g(L[1]),'🥈',64):'')+pcard(L[0],'one','JUARA UMUM · '+g(L[0]),'👑',120)+(L[2]?pcard(L[2],'three',g(L[2]),'🥉',64):'')+'</div>'}
   else{const seen={},w=[];L.forEach(x=>{if(!seen[x.g]){seen[x.g]=1;w.push(pcard(x,'one','JUARA CHANNEL '+(GL[x.g]||x.g),'👑',96))}});body='<div class="chg">'+w.join('')+'</div>'}
-  el.innerHTML=`<div class="cht"><span class="rib">🏆 JUARA SPG · ${MFULL[mo]} 2026</span><small>Berdasarkan pencapaian insentif · diperbarui setiap closing bulan</small><div class="seg"><button data-m="all" class="${chMode=='all'?'on':''}">OVERALL</button><button data-m="ch" class="${chMode=='ch'?'on':''}">BY CHANNEL</button></div></div>`+body+(L.length?'<div class="qt">Terima kasih atas kerja kerasnya! Kalian inspirasi seluruh tim. Yuk kejar juara bulan depan 🔥</div>':'');
+  el.innerHTML=`<div class="cht"><span class="rib">🏆 JUARA SPG · ${MFULL[mo]} 2026</span><small>${prev?'PRATINJAU · belum closing, data sampai week '+cur:'Berdasarkan pencapaian insentif · diperbarui setiap closing bulan'}</small><div class="seg"><button data-m="all" class="${chMode=='all'?'on':''}">OVERALL</button><button data-m="ch" class="${chMode=='ch'?'on':''}">BY CHANNEL</button></div></div>`+body+(L.length?'<div class="qt">Terima kasih atas kerja kerasnya! Kalian inspirasi seluruh tim. Yuk kejar juara bulan depan 🔥</div>':'');
   el.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{chMode=b.dataset.m;renderChamp()});
 }
 function page3(m,w1,w2){
