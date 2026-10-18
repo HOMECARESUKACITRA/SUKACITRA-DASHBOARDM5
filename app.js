@@ -70,13 +70,18 @@ const SK={
 'STOCKIS|RAINBOW':{t:'Jumlah Toko Rainbow Wall',d:'Min. 3 hanger GG + 1 clipstrip KN / 1 COC KN, wajib terdokumentasi, target min. 30 outlet',r:RG85},
 'STOCKIS|STM':{t:'STM Grosir Stockist (Kilau Nipis)',d:'Target growth minimal 100% vs Q1 2025 (dalam Rupiah)',r:RG,sku:KNALL,rp:1},
 'STOCKIS|OA':{t:'OA Toko CB Retail (exc Grosir Stockist)',d:'Berdasarkan data SAP BW/LBP',r:RG85}};
-let chart;
+let chart,LIV=null,insErr=false; // LIV = kriteria manual dari INS_DASH (live)
+const KEYI='inscache_v1';
+function buildLIV(rows){const o={};rows.forEach(r=>{const k=String(r.KODE_INS||'').trim(),sp=String(r.SPG||'').trim().toUpperCase(),bn=+r.BULAN_NO||MFULL.indexOf(String(r.BULAN||'').trim().toUpperCase())+1;
+  if(!k||!sp||!bn)return;o[bn+'|'+sp+'|'+k]={t:+r.TARGET||0,a:+r.AKTUAL||0,mn:+r.BATAS_MIN_ACH||0,mx:+r.MAX_INSENTIF_RP||0,earn:+r.INSENTIF_DIDAPAT_RP||0}});return o}
+try{LIV=JSON.parse(localStorage.getItem(KEYI)||'null')}catch(e){}
 function render(){
   buildFilters();
   const ytd=st.bulan==12,m=st.bulan,w1=ytd?1:wStart[m],w2=ytd?cur:w1+D.weeks[m]-1,rows=rowsBy(),done=Math.min(cur,w2);
   const wLeft=ytd?Math.max(1,acc-1-cur):Math.max(1,w2-Math.max(cur,w1-1));
   $('sub').textContent=ytd?`PERIODE YTD · JANUARI – WEEK ${cur} 2026`:`PERIODE ${MFULL[m]} 2026 · UPDATE WEEK ${cur}`;
   $('mode').textContent=demo?'MODE DEMO (data contoh)':'';
+  if(insErr&&!LIV)$('sub').textContent+=' · INSENTIF MANUAL: DATA LIVE GAGAL DIMUAT';
   $('unit').textContent='(VALUE)';
   const a=agg(rows,w1,w2,cur),ach=a.tk?a.ak/a.tk:0;
   const sp=st.spg||(new Set(rows.map(r=>r.spg)).size==1?D.spg[rows[0].spg].n:'');
@@ -144,7 +149,7 @@ function page2(rows,m,w1,w2,wLeft){
   const spl=st.spg?D.spg.findIndex(x=>x.n==st.spg):-1,ids=new Set(rows.map(r=>r.spg));
   const r2=rnd(m+99);let list=[];
   D.ins.filter(x=>x[0]==m+1&&(spl<0?ids.has(x[1]):x[1]==spl)).forEach(x=>{
-    let [,si,kr,kode,sat,t0,a0,mn,mx]=x,sr=S.filter(s=>s.spg==si);let t=t0,a=a0;
+    let [,si,kr,kode,sat,t0,a0,mn,mx]=x,sr=S.filter(s=>s.spg==si);const lv=LIV&&LIV[(m+1)+'|'+D.spg[si].n+'|'+kode];if(lv){t0=lv.t;a0=lv.a;mn=lv.mn;mx=lv.mx}let t=t0,a=a0;
     const sc=SK[D.spg[si].grp+'|'+kode]||{},sell=sc.sku&&(sc.rp||!ib?(q=>sc.sku.includes(q.sku)):(q=>kodeB(q)==kode));if(sc.t)kr=sc.t;
     let det='';
     let tR=null,aR=null;
@@ -155,7 +160,7 @@ function page2(rows,m,w1,w2,wLeft){
       det='<table><tr><th>SKU</th><th class="r">Target</th><th class="r">Aktual</th><th class="r">ACV</th><th class="r">Gap 100%</th><th class="r">Gap/week</th></tr>'+Object.keys(sk).map(k=>{const z=agg(sk[k],w1,w2,cur),tt=sc.rp?z.tr:ib?z.ck:z.ckr,aa=sc.rp?z.ar:ib?z.cak:z.cakr;const ac=tt?aa/tt:0,tD=uR?z.tr:tt,aD=uR?z.ar:aa,gp=Math.max(0,tD-aD);
         return`<tr><td>${k}</td><td class="r">${F2(tD)}</td><td class="r">${F2(aD)}</td><td class="r"><span class="chip ${cls(ac)}">${pct(ac)}</span></td><td class="r">${F2(gp)}</td><td class="r">${F2(gp/wLeft)}</td></tr>`}).join('')+'</table>'}
     else if(demo&&!t0){t=sat=='TOKO'?Math.ceil(sr.length/11/2)||3:sat=='OUTLET'?30:230;a=Math.round(t*(.6+r2()*.6))}
-    if(!t)return;const ac=a/t,acr=Math.round(ac*10000)/10000,earn=acr>=1?mx:acr>=mn?Math.round(acr*mx):0; // ACH dibulatkan 4 desimal seperti workbook
+    if(!t)return;const ac=a/t,acr=Math.round(ac*10000)/10000,earn=(lv&&!sell)?lv.earn:kode=='SELLOUT'?(acr>=1?mx:0):acr>=1?mx:acr>=mn?Math.round(acr*mx):0; // sell out: tanpa prorate; nilai HC/HC+kompetitor dari sheet // ACH dibulatkan 4 desimal seperti workbook
     list.push({sc,sp:D.spg[si].n,kr,sat,t,a,ac,mx,earn,mn,det,tR,aR})});
   const tot=list.reduce((s,x)=>s+x.mx,0),got=list.reduce((s,x)=>s+x.earn,0);
   $('d2sub').textContent=MFULL[m]+' · nilai insentif yang didapat';
@@ -190,6 +195,8 @@ if(C.FEED_URL){fetch(C.FEED_URL+'?sheet=FEED_DASH').then(r=>r.json()).then(j=>{
   const nf=[];const wk=r=>+r.WEEK_NO||parseInt(String(r.WEEK_KALENDER||'').replace(/\D/g,''))||0,setFoto=(n,u)=>{const o=D.spg.find(x=>x.n==String(n).trim().toUpperCase());if(o&&u)o.foto=String(u).trim()};
   rows.forEach(r=>{if(r.FOTO_SPG)setFoto(r.SPG,r.FOTO_SPG);const i=key[r.SPG+'|'+r.TOKO+'|'+r.SKU];if(i!=null)nf.push({s:i,w:wk(r),t:+r.TARGET_WEEK_RP||0,a:+r.AKTUAL_RP||0})});
   if(nf.length){F=nf;demo=false;cur=Math.max(1,...F.filter(f=>f.a>0).map(f=>f.w));if(!loaded)st.bulan=mOf(cur);saveCache()}ready()}).catch(()=>{ready(true)})}
+if(C.FEED_URL){fetch(C.FEED_URL+'?sheet=INS_DASH').then(r=>r.json()).then(j=>{const rows=j.rows||j;
+  if(!Array.isArray(rows)||!rows.length)throw 0;LIV=buildLIV(rows);insErr=false;try{localStorage.setItem(KEYI,JSON.stringify(LIV))}catch(e){}if(loaded)render()}).catch(()=>{insErr=true;if(loaded)render()})}
 if(C.FEED_URL){fetch(C.FEED_URL+'?sheet=FOTO_SPG').then(r=>r.json()).then(j=>{(j.rows||j).forEach(r=>{const o=D.spg.find(x=>x.n==String(r.SPG||'').trim().toUpperCase());if(o&&(r.FOTO||r.FOTO_SPG))o.foto=String(r.FOTO||r.FOTO_SPG).trim()});if(loaded)render()}).catch(()=>{})}
 const tg=$('tg'),setT=t=>{document.documentElement.dataset.theme=t;try{localStorage.setItem('theme',t)}catch(e){}tg.textContent=t=='dark'?'☀️ Terang':'🌙 Gelap'};
 setT(document.documentElement.dataset.theme);tg.onclick=()=>{setT(document.documentElement.dataset.theme=='dark'?'light':'dark');render()};
